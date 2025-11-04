@@ -71,6 +71,9 @@ import { useListWalletsQuery } from '@/features/wallets/services/walletsApi';
 import { formatCurrency, formatDate, formatRelativeTime, getStatusColor } from '@/utils/formatters';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
+import { ErrorAlert } from '@/components/common/ErrorAlert';
 
 const COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
 const RISK_COLORS = { low: 'green', medium: 'yellow', high: 'red' };
@@ -98,8 +101,8 @@ export const InvestmentsPage = () => {
 
   const investForm = useForm<InvestmentForm>();
 
-  const { data: productsData, isLoading: loadingProducts } = useListInvestmentProductsQuery({});
-  const { data: investmentsData, isLoading: loadingInvestments } = useListInvestmentsQuery();
+  const { data: productsData, isLoading: loadingProducts, error: productsError } = useListInvestmentProductsQuery({});
+  const { data: investmentsData, isLoading: loadingInvestments, error: investmentsError } = useListInvestmentsQuery();
   const { data: portfolioData } = useGetPortfolioQuery();
   const { data: walletsData } = useListWalletsQuery();
   const [calculateReturns, { isLoading: calculating }] = useCalculateReturnsMutation();
@@ -152,6 +155,25 @@ export const InvestmentsPage = () => {
     name: inv.product_name,
     value: inv.amount,
   }));
+
+  const error = productsError || investmentsError;
+
+  if (error) {
+    if (isKYCRequiredError(error)) {
+      return (
+        <KYCRequired
+          title="KYC Verification Required"
+          description="To manage your investments, you need to complete your KYC verification first."
+        />
+      );
+    }
+
+    return (
+      <Container maxW="container.xl" py={8}>
+        <ErrorAlert message="Failed to load investments. Please try again." />
+      </Container>
+    );
+  }
 
   return (
     <Container maxW="container.xl" py={8}>

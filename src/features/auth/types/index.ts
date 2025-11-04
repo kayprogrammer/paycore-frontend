@@ -85,11 +85,12 @@ export interface BiometricLoginRequest {
 
 export interface GoogleOAuthRequest {
   token: string;
+  id_token?: string;
 }
 
 export interface GoogleOAuthResponse {
   access: string;
   refresh: string;
-  user: User;
-  is_new_user: boolean;
+  user?: User; // Optional since backend might not return user data
+  is_new_user?: boolean;
 }

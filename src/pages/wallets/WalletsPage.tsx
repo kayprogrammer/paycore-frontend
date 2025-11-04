@@ -80,6 +80,8 @@ import {
 import { formatCurrency, formatRelativeTime, getStatusColor } from '@/utils/formatters';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 import { EmptyState } from '@/components/common/EmptyState';
 
 interface CreateWalletForm {
@@ -335,6 +337,15 @@ export const WalletsPage = () => {
   }
 
   if (error) {
+    if (isKYCRequiredError(error)) {
+      return (
+        <KYCRequired
+          title="KYC Verification Required"
+          description="To manage your wallets, you need to complete your KYC verification first."
+        />
+      );
+    }
+
     return (
       <Container maxW="container.xl" py={8}>
         <ErrorAlert message="Failed to load wallets. Please try again." />

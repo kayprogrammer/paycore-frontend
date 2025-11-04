@@ -24,7 +24,7 @@ export const cardsApi = baseApi.injectEndpoints({
     // 2. List Cards
     listCards: builder.query<ApiResponse<PaginatedResponse<Card>>, QueryParams | void>({
       query: (params) => ({
-        url: '/cards',
+        url: '/cards/list',
         params,
       }),
       providesTags: ['Cards'],

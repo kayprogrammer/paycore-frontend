@@ -79,6 +79,8 @@ import { formatCurrency, formatDate, formatRelativeTime, getStatusColor } from '
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 
 interface LoanApplicationForm {
   product_id: string;
@@ -123,8 +125,8 @@ export const LoansPage = () => {
   const autoRepayForm = useForm<AutoRepaymentForm>();
 
   // API
-  const { data: productsData, isLoading: loadingProducts } = useListLoanProductsQuery({});
-  const { data: loansData, isLoading: loadingLoans } = useListLoanApplicationsQuery();
+  const { data: productsData, isLoading: loadingProducts, error: productsError } = useListLoanProductsQuery({});
+  const { data: loansData, isLoading: loadingLoans, error: loansError } = useListLoanApplicationsQuery();
   const { data: walletsData } = useListWalletsQuery();
   const { data: creditScoreData } = useGetCreditScoreQuery();
   const { data: summaryData } = useGetLoanSummaryQuery();
@@ -257,6 +259,25 @@ export const LoansPage = () => {
     setSelectedLoan(loan);
     onScheduleOpen();
   };
+
+  const error = productsError || loansError;
+
+  if (error) {
+    if (isKYCRequiredError(error)) {
+      return (
+        <KYCRequired
+          title="KYC Verification Required"
+          description="To manage your loans, you need to complete your KYC verification first."
+        />
+      );
+    }
+
+    return (
+      <Container maxW="container.xl" py={8}>
+        <ErrorAlert message="Failed to load loans. Please try again." />
+      </Container>
+    );
+  }
 
   if (loadingProducts && loadingLoans) {
     return (

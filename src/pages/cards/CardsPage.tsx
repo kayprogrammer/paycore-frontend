@@ -83,6 +83,8 @@ import { useListWalletsQuery } from '@/features/wallets/services/walletsApi';
 import { formatCurrency, formatRelativeTime, getStatusColor, maskCardNumber } from '@/utils/formatters';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 
 interface CreateCardForm {
   wallet_id: string;
@@ -315,6 +317,15 @@ export const CardsPage = () => {
   }
 
   if (error) {
+    if (isKYCRequiredError(error)) {
+      return (
+        <KYCRequired
+          title="KYC Verification Required"
+          description="To manage your cards, you need to complete your KYC verification first."
+        />
+      );
+    }
+
     return (
       <Container maxW="container.xl" py={8}>
         <ErrorAlert message="Failed to load cards. Please try again." />

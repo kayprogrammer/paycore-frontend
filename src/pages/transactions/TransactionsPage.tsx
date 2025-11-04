@@ -75,6 +75,8 @@ import { formatCurrency, formatDateTime, formatRelativeTime, getStatusColor } fr
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 
 interface TransferForm {
   wallet_id: string;
@@ -448,6 +450,12 @@ export const TransactionsPage = () => {
         </Card>
 
         {/* Transactions Table */}
+        {error && isKYCRequiredError(error) ? (
+          <KYCRequired
+            title="KYC Verification Required"
+            description="To view your transactions, you need to complete your KYC verification first."
+          />
+        ) : (
         <Card>
           <CardBody>
             {error ? (
@@ -558,6 +566,7 @@ export const TransactionsPage = () => {
             )}
           </CardBody>
         </Card>
+        )}
       </VStack>
 
       {/* Transfer Modal */}

@@ -44,7 +44,9 @@ import { formatCurrency, formatRelativeTime, getStatusColor } from '@/utils/form
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
 import { useNavigate } from 'react-router-dom';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 
 const COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#EF4444'];
 
@@ -127,6 +129,15 @@ export const DashboardPage = () => {
   }
 
   if (walletError) {
+    if (isKYCRequiredError(walletError)) {
+      return (
+        <KYCRequired
+          title="KYC Verification Required"
+          description="To access your wallet and start using PayCore, you need to complete your KYC verification first."
+        />
+      );
+    }
+
     return (
       <Container maxW="container.xl" py={8}>
         <ErrorAlert message="Failed to load dashboard data. Please try again." />

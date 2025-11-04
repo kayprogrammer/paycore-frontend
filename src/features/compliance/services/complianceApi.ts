@@ -64,7 +64,7 @@ export const complianceApi = baseApi.injectEndpoints({
 
     // 4. Get Current KYC Level
     getCurrentKYCLevel: builder.query<ApiResponse<CurrentKYCLevel>, void>({
-      query: () => '/compliance/kyc/level',
+      query: () => '/compliance/kyc/level/current-level',
       providesTags: ['Compliance'],
     }),
   }),

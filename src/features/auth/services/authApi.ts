@@ -130,7 +130,9 @@ export const authApi = baseApi.injectEndpoints({
       query: (data) => ({
         url: '/auth/google-login',
         method: 'POST',
-        body: data,
+        body: {
+          token: data.id_token || data.token, // Backend expects 'token' field
+        },
       }),
       invalidatesTags: ['Auth'],
     }),

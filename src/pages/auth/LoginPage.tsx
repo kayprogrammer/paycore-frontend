@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Box,
   Button,
   Checkbox,
   Divider,
@@ -24,11 +23,12 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
-import { GoogleLogin } from '@react-oauth/google';
 import { MdFingerprint } from 'react-icons/md';
 import { useLoginMutation, useBiometricLoginMutation, useGoogleOAuthMutation } from '@/features/auth/services/authApi';
+import { useLazyGetProfileQuery } from '@/features/profile/services/profileApi';
 import { useAppDispatch } from '@/hooks';
 import { setCredentials } from '@/store/slices/authSlice';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 // Validation schema
 const loginSchema = yup.object().shape({
@@ -64,6 +64,7 @@ export const LoginPage = () => {
   const [login, { isLoading }] = useLoginMutation();
   const [biometricLogin, { isLoading: isBiometricLoading }] = useBiometricLoginMutation();
   const [googleOAuth, { isLoading: isGoogleLoading }] = useGoogleOAuthMutation();
+  const [getProfile] = useLazyGetProfileQuery();
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -140,36 +141,61 @@ export const LoginPage = () => {
 
       console.log('Google OAuth Response:', result);
 
-      // Handle different response structures
-      const userData = result.data?.user || result.user;
+      // Extract tokens from response
       const accessToken = result.data?.access || result.access;
       const refreshToken = result.data?.refresh || result.refresh;
 
-      if (userData && accessToken) {
-        // Store tokens
-        localStorage.setItem('access_token', accessToken);
-        if (refreshToken) {
-          localStorage.setItem('refresh_token', refreshToken);
-        }
+      if (!accessToken) {
+        throw new Error('No access token received');
+      }
+
+      // Store access token first so it's available for profile fetch
+      localStorage.setItem('access_token', accessToken);
+      if (refreshToken && refreshToken !== 'Set as HTTP-only cookie') {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
+
+      // Fetch user profile data using RTK Query
+      const profileResult = await getProfile().unwrap();
+      console.log('Profile data received:', profileResult);
+
+      const profileData = profileResult.data;
+
+      if (profileData) {
+        // Decode JWT to get user_id
+        const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+
+        // Construct user object from profile data and token
+        const userData = {
+          id: tokenPayload.user_id,
+          email: '', // Will be populated from another source if needed
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+          phone_number: null,
+          is_active: true,
+          is_staff: false,
+          kyc_level: 'tier_0',
+          created_at: new Date().toISOString(),
+        };
 
         dispatch(
           setCredentials({
             user: userData,
             accessToken: accessToken,
-            refreshToken: refreshToken || null,
+            refreshToken: refreshToken !== 'Set as HTTP-only cookie' ? refreshToken : null,
           })
         );
 
         toast({
           title: 'Login Successful',
-          description: 'Welcome to PayCore!',
+          description: `Welcome back, ${userData.first_name}!`,
           status: 'success',
           duration: 3000,
         });
 
         navigate('/dashboard');
       } else {
-        throw new Error('Invalid response structure');
+        throw new Error('No profile data in response');
       }
     } catch (error: any) {
       console.error('Google Login Error:', error);
@@ -295,24 +321,19 @@ export const LoginPage = () => {
       </HStack>
 
       {/* Google Sign-In */}
-      <Box w="full" minH="44px" display="flex" alignItems="center">
-        <Box w="full">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              toast({
-                title: 'Google Sign-In Failed',
-                description: 'Could not initialize Google Sign-In',
-                status: 'error',
-                duration: 5000,
-              });
-            }}
-            useOneTap
-            size="large"
-            width="100%"
-          />
-        </Box>
-      </Box>
+      <GoogleSignInButton
+        onSuccess={handleGoogleSuccess}
+        onError={() => {
+          toast({
+            title: 'Google Sign-In Failed',
+            description: 'Could not initialize Google Sign-In',
+            status: 'error',
+            duration: 5000,
+          });
+        }}
+        text="Sign in with Google"
+        isLoading={isGoogleLoading}
+      />
 
       {/* Sign Up Link */}
       <HStack justify="center" spacing={1}>

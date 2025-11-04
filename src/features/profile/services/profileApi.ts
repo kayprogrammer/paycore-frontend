@@ -8,14 +8,14 @@ export const profileApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // 1. Get Profile
     getProfile: builder.query<ApiResponse<Profile & { user: User }>, void>({
-      query: () => '/profiles/me',
+      query: () => '/profiles',
       providesTags: ['Profile'],
     }),
 
     // 2. Update Profile
     updateProfile: builder.mutation<ApiResponse<Profile>, UpdateProfileRequest>({
       query: (data) => ({
-        url: '/profiles/me',
+        url: '/profiles',
         method: 'PUT',
         body: data,
       }),
@@ -45,6 +45,7 @@ export const profileApi = baseApi.injectEndpoints({
 
 export const {
   useGetProfileQuery,
+  useLazyGetProfileQuery,
   useUpdateProfileMutation,
   useGetCountriesQuery,
   useUploadAvatarMutation,

@@ -62,6 +62,8 @@ import { formatCurrency, formatRelativeTime, getStatusColor } from '@/utils/form
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KYCRequired } from '@/components/common/KYCRequired';
+import { isKYCRequiredError } from '@/utils/errorHandlers';
 
 interface PaymentForm {
   wallet_id: string;
@@ -98,7 +100,7 @@ export const BillsPage = () => {
   const paymentForm = useForm<PaymentForm>();
 
   // API
-  const { data: providersData, isLoading: loadingProviders } = useListProvidersQuery(
+  const { data: providersData, isLoading: loadingProviders, error: providersError } = useListProvidersQuery(
     { category: selectedCategory || undefined },
     { skip: !selectedCategory }
   );
@@ -106,7 +108,7 @@ export const BillsPage = () => {
     selectedProvider?.id || '',
     { skip: !selectedProvider }
   );
-  const { data: walletsData } = useListWalletsQuery();
+  const { data: walletsData, error: walletsError } = useListWalletsQuery();
   const { data: paymentsData, isLoading: loadingHistory } = useListBillPaymentsQuery({ limit: 20 });
   const [validateCustomer, { isLoading: validating }] = useValidateCustomerMutation();
   const [payBill, { isLoading: paying }] = usePayBillMutation();
@@ -202,6 +204,25 @@ export const BillsPage = () => {
       });
     }
   };
+
+  // Check for KYC errors
+  if (walletsError && isKYCRequiredError(walletsError)) {
+    return (
+      <KYCRequired
+        title="KYC Verification Required"
+        description="To pay bills, you need to complete your KYC verification first."
+      />
+    );
+  }
+
+  if (providersError && isKYCRequiredError(providersError)) {
+    return (
+      <KYCRequired
+        title="KYC Verification Required"
+        description="To pay bills, you need to complete your KYC verification first."
+      />
+    );
+  }
 
   return (
     <Container maxW="container.xl" py={8}>
