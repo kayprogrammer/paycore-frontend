@@ -392,20 +392,22 @@ export const RegisterPage = () => {
       </HStack>
 
       {/* Google Sign-Up */}
-      <Box w="full">
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={() => {
-            toast({
-              title: 'Google Sign-Up Failed',
-              description: 'Could not initialize Google Sign-In',
-              status: 'error',
-              duration: 5000,
-            });
-          }}
-          size="large"
-          width="100%"
-        />
+      <Box w="full" minH="44px" display="flex" alignItems="center">
+        <Box w="full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              toast({
+                title: 'Google Sign-Up Failed',
+                description: 'Could not initialize Google Sign-In',
+                status: 'error',
+                duration: 5000,
+              });
+            }}
+            size="large"
+            width="100%"
+          />
+        </Box>
       </Box>
 
       {/* Sign In Link */}

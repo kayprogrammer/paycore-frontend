@@ -16,16 +16,14 @@ export interface User {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 const initialState: AuthState = {
   user: null,
-  accessToken: localStorage.getItem('access_token'),
-  refreshToken: localStorage.getItem('refresh_token'),
-  isAuthenticated: !!localStorage.getItem('access_token'),
+  accessToken: null,
+  isAuthenticated: false,
   isLoading: false,
 };
 
@@ -35,35 +33,38 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; accessToken: string; refreshToken: string }>
+      action: PayloadAction<{ user: User; accessToken: string; refreshToken?: string | null }>
     ) => {
       const { user, accessToken, refreshToken } = action.payload;
       state.user = user;
       state.accessToken = accessToken;
-      state.refreshToken = refreshToken;
       state.isAuthenticated = true;
 
-      // Persist to localStorage
+      // Only persist access token to localStorage (refresh token is in HTTP-only cookie)
       localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
+
+      // Optionally store refresh token if provided (for mobile apps, etc.)
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
       localStorage.setItem('user', JSON.stringify(action.payload));
     },
-    updateTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) => {
+    updateTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken?: string }>) => {
       const { accessToken, refreshToken } = action.payload;
       state.accessToken = accessToken;
-      state.refreshToken = refreshToken;
 
       localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
     },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
-      state.refreshToken = null;
       state.isAuthenticated = false;
 
       // Clear localStorage
