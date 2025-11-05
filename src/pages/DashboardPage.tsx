@@ -177,7 +177,7 @@ export const DashboardPage = () => {
         )}
 
         {/* Wallet Summary */}
-        <Card bg="gradient-to-br from-brand.500 to-brand.700" color="white" shadow="xl">
+        <Card bgGradient="linear(to-br, brand.500, brand.700)" color="white" shadow="xl">
           <CardBody>
             <VStack align="stretch" spacing={4}>
               <HStack justify="space-between">

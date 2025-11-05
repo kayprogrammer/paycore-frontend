@@ -73,6 +73,7 @@ interface ProfileForm {
   push_enabled: boolean;
   in_app_enabled: boolean;
   email_enabled: boolean;
+  biometrics_enabled: boolean;
   avatar?: FileList;
 }
 
@@ -168,6 +169,7 @@ export const ProfilePage = () => {
       formData.append('push_enabled', String(data.push_enabled ?? true));
       formData.append('in_app_enabled', String(data.in_app_enabled ?? true));
       formData.append('email_enabled', String(data.email_enabled ?? true));
+      formData.append('biometrics_enabled', String(data.biometrics_enabled ?? false));
 
       // Add avatar if selected
       if (data.avatar && data.avatar.length > 0) {
@@ -255,6 +257,7 @@ export const ProfilePage = () => {
         push_enabled: profile.push_enabled ?? true,
         in_app_enabled: profile.in_app_enabled ?? true,
         email_enabled: profile.email_enabled ?? true,
+        biometrics_enabled: profile.biometrics_enabled ?? false,
       });
     }
     onEditOpen();
@@ -521,6 +524,10 @@ export const ProfilePage = () => {
                   <FormControl display="flex" alignItems="center">
                     <FormLabel mb={0} flex={1}>Email Notifications</FormLabel>
                     <Switch {...profileForm.register('email_enabled')} />
+                  </FormControl>
+                  <FormControl display="flex" alignItems="center">
+                    <FormLabel mb={0} flex={1}>Biometric Authentication</FormLabel>
+                    <Switch {...profileForm.register('biometrics_enabled')} />
                   </FormControl>
                 </SimpleGrid>
               </VStack>

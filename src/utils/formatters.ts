@@ -1,6 +1,6 @@
 import { format, formatDistanceToNow } from 'date-fns';
 
-export const formatCurrency = (amount: number, currencyCode: string = 'NGN'): string => {
+export const formatCurrency = (amount: number | string | undefined | null, currencyCode: string = 'NGN'): string => {
   const currencySymbols: Record<string, string> = {
     NGN: '₦',
     USD: '$',
@@ -11,7 +11,20 @@ export const formatCurrency = (amount: number, currencyCode: string = 'NGN'): st
   };
 
   const symbol = currencySymbols[currencyCode] || currencyCode;
-  return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Handle undefined, null, or invalid values
+  if (amount === undefined || amount === null) {
+    return `${symbol}0.00`;
+  }
+
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+  // Handle NaN or invalid numbers
+  if (isNaN(numAmount)) {
+    return `${symbol}0.00`;
+  }
+
+  return `${symbol}${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export const formatDate = (date: string | Date, formatString: string = 'MMM dd, yyyy'): string => {

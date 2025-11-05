@@ -32,12 +32,6 @@ import {
   Tab,
   TabPanel,
   Switch,
-  AlertDialog,
-  AlertDialogOverlay,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogBody,
-  AlertDialogFooter,
   PinInput,
   PinInputField,
   Skeleton,
@@ -52,7 +46,6 @@ import {
   FiPlus,
   FiMoreVertical,
   FiEdit,
-  FiTrash2,
   FiLock,
   FiUnlock,
   FiShield,
@@ -62,19 +55,18 @@ import {
   FiRefreshCw,
 } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   useListWalletsQuery,
+  useListCurrenciesQuery,
   useCreateWalletMutation,
   useUpdateWalletMutation,
-  useDeleteWalletMutation,
   useSetDefaultWalletMutation,
   useSetPinMutation,
   useChangePinMutation,
   useEnableWalletSecurityMutation,
   useDisableWalletSecurityMutation,
-  useGetSecurityStatusQuery,
   useChangeWalletStatusMutation,
 } from '@/features/wallets/services/walletsApi';
 import { formatCurrency, formatRelativeTime, getStatusColor } from '@/utils/formatters';
@@ -98,18 +90,30 @@ interface PinForm {
 
 export const WalletsPage = () => {
   const toast = useToast();
-  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Helper function to format error messages
+  const getErrorMessage = (error: any): string => {
+    let errorMessage = error.data?.message || 'An error occurred';
+
+    // Handle field-level validation errors for invalid_entry
+    if (error.data?.code === 'invalid_entry' && error.data?.data) {
+      const fieldErrors = Object.entries(error.data.data)
+        .map(([field, message]) => `${field}: ${message}`)
+        .join(', ');
+      errorMessage = fieldErrors || errorMessage;
+    }
+
+    return errorMessage;
+  };
 
   // State
   const [selectedWallet, setSelectedWallet] = useState<any>(null);
-  const [deleteWalletId, setDeleteWalletId] = useState<string | null>(null);
   const [pinAction, setPinAction] = useState<'set' | 'change' | null>(null);
   const [showBalance, setShowBalance] = useState(true);
 
   // Modals
   const { isOpen: isCreateOpen, onOpen: onCreateOpen, onClose: onCreateClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const { isOpen: isPinOpen, onOpen: onPinOpen, onClose: onPinClose } = useDisclosure();
   const { isOpen: isSecurityOpen, onOpen: onSecurityOpen, onClose: onSecurityClose } = useDisclosure();
 
@@ -119,10 +123,10 @@ export const WalletsPage = () => {
   const pinForm = useForm<PinForm>();
 
   // API
-  const { data: walletsData, isLoading, error } = useListWalletsQuery();
+  const { data: walletsData, isLoading, error, refetch } = useListWalletsQuery();
+  const { data: currenciesData } = useListCurrenciesQuery();
   const [createWallet, { isLoading: creating }] = useCreateWalletMutation();
   const [updateWallet, { isLoading: updating }] = useUpdateWalletMutation();
-  const [deleteWallet, { isLoading: deleting }] = useDeleteWalletMutation();
   const [setDefaultWallet] = useSetDefaultWalletMutation();
   const [setPin, { isLoading: settingPin }] = useSetPinMutation();
   const [changePin, { isLoading: changingPin }] = useChangePinMutation();
@@ -130,12 +134,17 @@ export const WalletsPage = () => {
   const [disableWalletSecurity] = useDisableWalletSecurityMutation();
   const [changeStatus] = useChangeWalletStatusMutation();
 
-  const wallets = walletsData?.data?.data || [];
+  const wallets = walletsData?.data || [];
+  const currencies = currenciesData?.data || [];
 
   // Handlers
   const handleCreate = async (data: CreateWalletForm) => {
     try {
-      await createWallet(data).unwrap();
+      await createWallet({
+        name: data.name,
+        currency_code: data.currency,
+        wallet_type: data.type as 'main' | 'savings' | 'investment',
+      }).unwrap();
       toast({
         title: 'Wallet created successfully',
         status: 'success',
@@ -146,7 +155,7 @@ export const WalletsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to create wallet',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -156,7 +165,11 @@ export const WalletsPage = () => {
   const handleEdit = async (data: CreateWalletForm) => {
     if (!selectedWallet) return;
     try {
-      await updateWallet({ id: selectedWallet.id, data }).unwrap();
+      // Only send the name field as backend doesn't support changing currency or type
+      await updateWallet({
+        id: selectedWallet.wallet_id,
+        data: { name: data.name }
+      }).unwrap();
       toast({
         title: 'Wallet updated successfully',
         status: 'success',
@@ -167,28 +180,7 @@ export const WalletsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to update wallet',
-        description: error.data?.message || 'An error occurred',
-        status: 'error',
-        duration: 5000,
-      });
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteWalletId) return;
-    try {
-      await deleteWallet(deleteWalletId).unwrap();
-      toast({
-        title: 'Wallet deleted successfully',
-        status: 'success',
-        duration: 3000,
-      });
-      onDeleteClose();
-      setDeleteWalletId(null);
-    } catch (error: any) {
-      toast({
-        title: 'Failed to delete wallet',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -198,6 +190,8 @@ export const WalletsPage = () => {
   const handleSetDefault = async (walletId: string) => {
     try {
       await setDefaultWallet(walletId).unwrap();
+      // Manually refetch to ensure UI updates with latest default status
+      await refetch();
       toast({
         title: 'Default wallet set successfully',
         status: 'success',
@@ -206,7 +200,7 @@ export const WalletsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to set default wallet',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -228,13 +222,16 @@ export const WalletsPage = () => {
     try {
       if (pinAction === 'set') {
         await setPin({
-          walletId: selectedWallet.id,
-          data: { pin: data.pin },
+          walletId: selectedWallet.wallet_id,
+          data: { pin: parseInt(data.pin, 10) },
         }).unwrap();
       } else {
         await changePin({
-          walletId: selectedWallet.id,
-          data: { old_pin: data.old_pin!, new_pin: data.pin },
+          walletId: selectedWallet.wallet_id,
+          data: {
+            current_pin: parseInt(data.old_pin!, 10),
+            new_pin: parseInt(data.pin, 10)
+          },
         }).unwrap();
       }
       toast({
@@ -242,14 +239,14 @@ export const WalletsPage = () => {
         status: 'success',
         duration: 3000,
       });
+
       onPinClose();
       pinForm.reset();
-      setSelectedWallet(null);
       setPinAction(null);
     } catch (error: any) {
       toast({
         title: `Failed to ${pinAction} PIN`,
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -257,27 +254,47 @@ export const WalletsPage = () => {
   };
 
   const handleToggleBiometric = async (walletId: string, enabled: boolean) => {
+    // Check if the wallet has a PIN set
+    if (!selectedWallet?.requires_pin) {
+      toast({
+        title: 'PIN Required',
+        description: 'Please set a wallet PIN first before enabling biometric authentication',
+        status: 'warning',
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
       if (enabled) {
-        // Note: For enabling biometric, you need to provide a PIN
-        // This is a simplified version - you should prompt for PIN first
-        const pin = prompt('Enter your wallet PIN to enable biometric:');
-        if (!pin) return;
-
+        // Enable biometric - no PIN needed as we just need to set the flag
+        // User must already have biometrics enabled on their profile
         await enableWalletSecurity({
           walletId,
-          data: { pin, enable_biometric: true }
+          data: { enable_biometric: true }
         }).unwrap();
       } else {
-        // For disabling, you need current PIN
-        const currentPin = prompt('Enter your wallet PIN to disable biometric:');
-        if (!currentPin) return;
+        // For disabling, verify current PIN
+        const pinStr = prompt('Enter your 4-digit wallet PIN to disable biometric:');
+        if (!pinStr) return;
+
+        const currentPin = parseInt(pinStr, 10);
+        if (isNaN(currentPin) || currentPin < 1000 || currentPin > 9999) {
+          toast({
+            title: 'Invalid PIN',
+            description: 'PIN must be a 4-digit number',
+            status: 'error',
+            duration: 3000,
+          });
+          return;
+        }
 
         await disableWalletSecurity({
           walletId,
           data: { current_pin: currentPin, disable_biometric: true }
         }).unwrap();
       }
+
       toast({
         title: `Biometric ${enabled ? 'enabled' : 'disabled'} successfully`,
         status: 'success',
@@ -286,7 +303,7 @@ export const WalletsPage = () => {
     } catch (error: any) {
       toast({
         title: `Failed to ${enabled ? 'enable' : 'disable'} biometric`,
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -307,7 +324,7 @@ export const WalletsPage = () => {
     } catch (error: any) {
       toast({
         title: `Failed to ${freeze ? 'freeze' : 'unfreeze'} wallet`,
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -318,8 +335,7 @@ export const WalletsPage = () => {
     setSelectedWallet(wallet);
     editForm.reset({
       name: wallet.name,
-      currency: wallet.currency,
-      type: wallet.type,
+      // Currency and type are display-only, not editable
     });
     onEditOpen();
   };
@@ -397,7 +413,7 @@ export const WalletsPage = () => {
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             {wallets.map((wallet: any) => (
               <Card
-                key={wallet.id}
+                key={wallet.wallet_id}
                 position="relative"
                 overflow="hidden"
                 transition="all 0.2s"
@@ -439,7 +455,7 @@ export const WalletsPage = () => {
                         Edit
                       </MenuItem>
                       {!wallet.is_default && (
-                        <MenuItem icon={<Icon as={FiStar} />} onClick={() => handleSetDefault(wallet.id)}>
+                        <MenuItem icon={<Icon as={FiStar} />} onClick={() => handleSetDefault(wallet.wallet_id)}>
                           Set as Default
                         </MenuItem>
                       )}
@@ -451,20 +467,9 @@ export const WalletsPage = () => {
                       </MenuItem>
                       <MenuItem
                         icon={<Icon as={wallet.status === 'active' ? FiLock : FiUnlock} />}
-                        onClick={() => handleFreezeWallet(wallet.id, wallet.status === 'active')}
+                        onClick={() => handleFreezeWallet(wallet.wallet_id, wallet.status === 'active')}
                       >
                         {wallet.status === 'active' ? 'Freeze' : 'Unfreeze'}
-                      </MenuItem>
-                      <Divider />
-                      <MenuItem
-                        icon={<Icon as={FiTrash2} />}
-                        color="red.500"
-                        onClick={() => {
-                          setDeleteWalletId(wallet.id);
-                          onDeleteOpen();
-                        }}
-                      >
-                        Delete
                       </MenuItem>
                     </MenuList>
                   </Menu>
@@ -479,7 +484,7 @@ export const WalletsPage = () => {
                           {wallet.name}
                         </Text>
                         <Text fontSize="sm" color="gray.500" textTransform="uppercase">
-                          {wallet.currency} • {wallet.type}
+                          {wallet.currency?.code || 'N/A'} • {wallet.wallet_type}
                         </Text>
                       </VStack>
                     </HStack>
@@ -490,7 +495,7 @@ export const WalletsPage = () => {
                       </Text>
                       <Text fontSize="2xl" fontWeight="bold">
                         {showBalance
-                          ? formatCurrency(wallet.balance, wallet.currency)
+                          ? formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')
                           : '••••••'}
                       </Text>
                     </Box>
@@ -534,19 +539,20 @@ export const WalletsPage = () => {
                 <FormControl isRequired>
                   <FormLabel>Currency</FormLabel>
                   <Select {...createForm.register('currency')} placeholder="Select currency">
-                    <option value="NGN">Nigerian Naira (NGN)</option>
-                    <option value="USD">US Dollar (USD)</option>
-                    <option value="GBP">British Pound (GBP)</option>
-                    <option value="EUR">Euro (EUR)</option>
+                    {currencies.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.name} ({currency.code})
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
 
                 <FormControl isRequired>
                   <FormLabel>Wallet Type</FormLabel>
                   <Select {...createForm.register('type')} placeholder="Select type">
-                    <option value="personal">Personal</option>
-                    <option value="business">Business</option>
-                    <option value="savings">Savings</option>
+                    <option value="main">Main Wallet</option>
+                    <option value="savings">Savings Wallet</option>
+                    <option value="investment">Investment Wallet</option>
                   </Select>
                 </FormControl>
               </VStack>
@@ -574,21 +580,27 @@ export const WalletsPage = () => {
               <VStack spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>Wallet Name</FormLabel>
-                  <Input {...editForm.register('name')} />
+                  <Input {...editForm.register('name')} placeholder="Enter wallet name" />
                 </FormControl>
 
                 <FormControl>
                   <FormLabel>Currency</FormLabel>
-                  <Input {...editForm.register('currency')} disabled />
+                  <Input value={selectedWallet?.currency?.code || ''} disabled bg="gray.50" />
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    Currency cannot be changed after wallet creation
+                  </Text>
                 </FormControl>
 
-                <FormControl isRequired>
+                <FormControl>
                   <FormLabel>Wallet Type</FormLabel>
-                  <Select {...editForm.register('type')}>
-                    <option value="personal">Personal</option>
-                    <option value="business">Business</option>
-                    <option value="savings">Savings</option>
-                  </Select>
+                  <Input
+                    value={selectedWallet?.wallet_type?.charAt(0).toUpperCase() + selectedWallet?.wallet_type?.slice(1) || ''}
+                    disabled
+                    bg="gray.50"
+                  />
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    Wallet type cannot be changed after creation
+                  </Text>
                 </FormControl>
               </VStack>
             </ModalBody>
@@ -620,22 +632,29 @@ export const WalletsPage = () => {
                       Secure your wallet with a PIN
                     </Text>
                   </Box>
+                  {selectedWallet?.requires_pin && (
+                    <Badge colorScheme="green">PIN Set</Badge>
+                  )}
                 </HStack>
                 <HStack>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openPinModal(selectedWallet, 'set')}
-                  >
-                    Set PIN
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openPinModal(selectedWallet, 'change')}
-                  >
-                    Change PIN
-                  </Button>
+                  {!selectedWallet?.requires_pin ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="brand"
+                      onClick={() => openPinModal(selectedWallet, 'set')}
+                    >
+                      Set PIN
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openPinModal(selectedWallet, 'change')}
+                    >
+                      Change PIN
+                    </Button>
+                  )}
                 </HStack>
               </Box>
 
@@ -649,10 +668,13 @@ export const WalletsPage = () => {
                   </Text>
                 </Box>
                 <Switch
-                  isChecked={selectedWallet?.biometric_enabled}
-                  onChange={(e) =>
-                    handleToggleBiometric(selectedWallet?.id, e.target.checked)
-                  }
+                  isChecked={selectedWallet?.requires_biometric || false}
+                  isDisabled={!selectedWallet?.wallet_id || !selectedWallet?.requires_pin}
+                  onChange={(e) => {
+                    if (selectedWallet?.wallet_id) {
+                      handleToggleBiometric(selectedWallet.wallet_id, e.target.checked);
+                    }
+                  }}
                 />
               </HStack>
             </VStack>
@@ -721,29 +743,6 @@ export const WalletsPage = () => {
         </ModalContent>
       </Modal>
 
-      {/* Delete Confirmation */}
-      <AlertDialog
-        isOpen={isDeleteOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onDeleteClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Delete Wallet</AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to delete this wallet? This action cannot be undone.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onDeleteClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3} isLoading={deleting}>
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Container>
   );
 };

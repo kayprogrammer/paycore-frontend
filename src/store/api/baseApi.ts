@@ -65,6 +65,7 @@ export const baseApi = createApi({
     'Auth',
     'Profile',
     'Wallets',
+    'Currencies',
     'Cards',
     'Transactions',
     'Bills',

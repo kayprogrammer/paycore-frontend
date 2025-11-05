@@ -314,7 +314,7 @@ export const LoansPage = () => {
                   <StatLabel>Active Loans</StatLabel>
                   <StatNumber>{summary.active_loans}</StatNumber>
                   <StatHelpText>
-                    {formatCurrency(summary.total_outstanding, 'NGN')} outstanding
+                    {formatCurrency(summary.outstanding_balance, 'NGN')} outstanding
                   </StatHelpText>
                 </Stat>
               </CardBody>
@@ -322,9 +322,9 @@ export const LoansPage = () => {
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Total Disbursed</StatLabel>
+                  <StatLabel>Total Borrowed</StatLabel>
                   <StatNumber fontSize="xl">
-                    {formatCurrency(summary.total_disbursed, 'NGN')}
+                    {formatCurrency(summary.total_borrowed, 'NGN')}
                   </StatNumber>
                   <StatHelpText>All time</StatHelpText>
                 </Stat>

@@ -1,7 +1,7 @@
 import { Currency, WalletStatus } from '@/types/common';
 
 export interface Wallet {
-  id: string;
+  wallet_id: string;
   user_id: string;
   currency: Currency;
   name: string;
@@ -13,8 +13,8 @@ export interface Wallet {
   account_provider: string;
   status: WalletStatus;
   is_default: boolean;
-  pin_set: boolean;
-  biometric_enabled: boolean;
+  requires_pin: boolean;
+  requires_biometric: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -40,14 +40,12 @@ export interface WalletBalance {
 }
 
 export interface SetPinRequest {
-  pin: string;
-  confirm_pin: string;
+  pin: number;
 }
 
 export interface ChangePinRequest {
-  old_pin: string;
-  new_pin: string;
-  confirm_pin: string;
+  current_pin: number;
+  new_pin: number;
 }
 
 export interface VerifyPinRequest {

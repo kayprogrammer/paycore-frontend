@@ -1,5 +1,5 @@
 import { baseApi } from '@/store/api/baseApi';
-import type { ApiResponse, PaginatedResponse, QueryParams } from '@/types/common';
+import type { ApiResponse, PaginatedResponse, QueryParams, Currency } from '@/types/common';
 import type {
   Wallet,
   CreateWalletRequest,
@@ -15,6 +15,12 @@ import type {
 
 export const walletsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // 0. List Currencies
+    listCurrencies: builder.query<ApiResponse<Currency[]>, void>({
+      query: () => '/wallets/currencies',
+      providesTags: ['Currencies'],
+    }),
+
     // 1. Create Wallet
     createWallet: builder.mutation<ApiResponse<Wallet>, CreateWalletRequest>({
       query: (data) => ({
@@ -210,6 +216,7 @@ export const walletsApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useListCurrenciesQuery,
   useCreateWalletMutation,
   useListWalletsQuery,
   useGetWalletQuery,

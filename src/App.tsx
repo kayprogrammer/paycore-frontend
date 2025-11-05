@@ -23,6 +23,7 @@ import { LoansPage } from '@/pages/loans/LoansPage';
 import { InvestmentsPage } from '@/pages/investments/InvestmentsPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
+import { SupportPage } from '@/pages/SupportPage';
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -181,6 +182,16 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <SettingsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <SupportPage />
               </MainLayout>
             </ProtectedRoute>
           }

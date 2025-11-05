@@ -7,10 +7,17 @@ export interface User {
   first_name: string;
   last_name: string;
   phone_number: string | null;
+  phone: string | null;
+  dob: string | null;
+  bio: string | null;
   avatar?: string | null;
   is_active: boolean;
   is_staff: boolean;
   kyc_level: string;
+  push_enabled: boolean;
+  in_app_enabled: boolean;
+  email_enabled: boolean;
+  biometrics_enabled: boolean;
   created_at: string;
 }
 
