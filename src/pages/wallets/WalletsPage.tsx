@@ -72,8 +72,8 @@ import {
   useSetDefaultWalletMutation,
   useSetPinMutation,
   useChangePinMutation,
-  useEnableBiometricMutation,
-  useDisableBiometricMutation,
+  useEnableWalletSecurityMutation,
+  useDisableWalletSecurityMutation,
   useGetSecurityStatusQuery,
   useChangeWalletStatusMutation,
 } from '@/features/wallets/services/walletsApi';
@@ -126,8 +126,8 @@ export const WalletsPage = () => {
   const [setDefaultWallet] = useSetDefaultWalletMutation();
   const [setPin, { isLoading: settingPin }] = useSetPinMutation();
   const [changePin, { isLoading: changingPin }] = useChangePinMutation();
-  const [enableBiometric] = useEnableBiometricMutation();
-  const [disableBiometric] = useDisableBiometricMutation();
+  const [enableWalletSecurity] = useEnableWalletSecurityMutation();
+  const [disableWalletSecurity] = useDisableWalletSecurityMutation();
   const [changeStatus] = useChangeWalletStatusMutation();
 
   const wallets = walletsData?.data?.data || [];
@@ -259,9 +259,24 @@ export const WalletsPage = () => {
   const handleToggleBiometric = async (walletId: string, enabled: boolean) => {
     try {
       if (enabled) {
-        await enableBiometric(walletId).unwrap();
+        // Note: For enabling biometric, you need to provide a PIN
+        // This is a simplified version - you should prompt for PIN first
+        const pin = prompt('Enter your wallet PIN to enable biometric:');
+        if (!pin) return;
+
+        await enableWalletSecurity({
+          walletId,
+          data: { pin, enable_biometric: true }
+        }).unwrap();
       } else {
-        await disableBiometric(walletId).unwrap();
+        // For disabling, you need current PIN
+        const currentPin = prompt('Enter your wallet PIN to disable biometric:');
+        if (!currentPin) return;
+
+        await disableWalletSecurity({
+          walletId,
+          data: { current_pin: currentPin, disable_biometric: true }
+        }).unwrap();
       }
       toast({
         title: `Biometric ${enabled ? 'enabled' : 'disabled'} successfully`,

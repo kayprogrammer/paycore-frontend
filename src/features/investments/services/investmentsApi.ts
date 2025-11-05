@@ -21,7 +21,7 @@ export const investmentsApi = baseApi.injectEndpoints({
       { type?: string; risk_level?: string }
     >({
       query: (params) => ({
-        url: '/investments/products',
+        url: '/investments/products/list',
         params,
       }),
       providesTags: ['Investments'],
@@ -58,7 +58,7 @@ export const investmentsApi = baseApi.injectEndpoints({
       QueryParams | void
     >({
       query: (params) => ({
-        url: '/investments',
+        url: '/investments/list',
         params,
       }),
       providesTags: ['Investments'],
@@ -92,7 +92,7 @@ export const investmentsApi = baseApi.injectEndpoints({
 
     // 9. Get Portfolio
     getPortfolio: builder.query<ApiResponse<InvestmentPortfolio>, void>({
-      query: () => '/investments/portfolio',
+      query: () => '/investments/portfolio/summary',
       providesTags: ['Investments'],
     }),
 

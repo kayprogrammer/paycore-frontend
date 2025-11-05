@@ -100,7 +100,15 @@ export const Sidebar = () => {
         <Box px={6}>
           <Link to="/profile">
             <Flex align="center" cursor="pointer" _hover={{ opacity: 0.8 }}>
-              <Avatar size="sm" name={`${user?.first_name} ${user?.last_name}`} mr={3} />
+              <Avatar
+                size="sm"
+                name={`${user?.first_name} ${user?.last_name}`}
+                src={user?.avatar || undefined}
+                bg="brand.500"
+                color="white"
+                fontWeight="bold"
+                mr={3}
+              />
               <Box>
                 <Text fontSize="sm" fontWeight="600">
                   {user?.first_name} {user?.last_name}

@@ -30,6 +30,7 @@ import * as yup from 'yup';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { ViewIcon, ViewOffIcon, CheckCircleIcon, WarningIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { useForgotPasswordMutation, useResetPasswordMutation } from '@/features/auth/services/authApi';
+import { handleApiError } from '@/utils/formErrorHandler';
 
 // Password strength checker
 const checkPasswordStrength = (password: string): number => {
@@ -109,6 +110,7 @@ const ForgotPasswordPage = () => {
   const {
     register: registerEmail,
     handleSubmit: handleSubmitEmail,
+    setError: setEmailError,
     formState: { errors: emailErrors },
   } = useForm<EmailFormData>({
     resolver: yupResolver(emailSchema),
@@ -118,6 +120,7 @@ const ForgotPasswordPage = () => {
   const {
     register: registerReset,
     handleSubmit: handleSubmitReset,
+    setError: setResetError,
     formState: { errors: resetErrors },
     watch,
   } = useForm<ResetPasswordFormData>({
@@ -166,14 +169,7 @@ const ForgotPasswordPage = () => {
       setCountdown(60);
       setCanResend(false);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error?.data?.message || error?.data?.detail || 'Unable to send OTP. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top-right',
-      });
+      handleApiError(error, setEmailError, toast);
     }
   };
 
@@ -212,14 +208,7 @@ const ForgotPasswordPage = () => {
         navigate('/auth/login');
       }, 2000);
     } catch (error: any) {
-      toast({
-        title: 'Password reset failed',
-        description: error?.data?.message || error?.data?.detail || 'Invalid OTP or unable to reset password. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top-right',
-      });
+      handleApiError(error, setResetError, toast);
     }
   };
 

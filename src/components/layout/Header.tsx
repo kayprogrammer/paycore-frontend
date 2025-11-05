@@ -130,12 +130,17 @@ export const Header = () => {
 
           {/* User Menu */}
           <Menu>
-            <MenuButton
-              as={Avatar}
-              size="sm"
-              name={`${user?.first_name} ${user?.last_name}`}
-              cursor="pointer"
-            />
+            <MenuButton>
+              <Avatar
+                size="sm"
+                name={`${user?.first_name} ${user?.last_name}`}
+                src={user?.avatar || undefined}
+                bg="brand.500"
+                color="white"
+                fontWeight="bold"
+                cursor="pointer"
+              />
+            </MenuButton>
             <MenuList>
               <MenuItem icon={<FiUser />} onClick={() => navigate('/profile')}>
                 Profile

@@ -29,6 +29,7 @@ import { useLazyGetProfileQuery } from '@/features/profile/services/profileApi';
 import { useAppDispatch } from '@/hooks';
 import { setCredentials } from '@/store/slices/authSlice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { handleApiError } from '@/utils/formErrorHandler';
 
 // Validation schema
 const loginSchema = yup.object().shape({
@@ -53,6 +54,7 @@ export const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: yupResolver(loginSchema),
@@ -89,13 +91,7 @@ export const LoginPage = () => {
         },
       });
     } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error?.data?.message || 'Invalid email or password',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      handleApiError(error, setError, toast);
     }
   };
 
@@ -171,10 +167,11 @@ export const LoginPage = () => {
           email: '', // Will be populated from another source if needed
           first_name: profileData.first_name,
           last_name: profileData.last_name,
-          phone_number: null,
+          phone_number: profileData.phone_number,
+          avatar: profileData.avatar_url || null,
           is_active: true,
           is_staff: false,
-          kyc_level: 'tier_0',
+          kyc_level: profileData.kyc_level || 'tier_0',
           created_at: new Date().toISOString(),
         };
 

@@ -63,10 +63,9 @@ import {
   useListTransactionsQuery,
   useTransferMutation,
   useInitiateDepositMutation,
-  useVerifyDepositMutation,
   useInitiateWithdrawalMutation,
   useVerifyBankAccountMutation,
-  useGetBanksQuery,
+  useGetWithdrawalBanksQuery,
   useCreateDisputeMutation,
   useGetTransactionStatisticsQuery,
 } from '@/features/transactions/services/transactionsApi';
@@ -141,7 +140,7 @@ export const TransactionsPage = () => {
     search: searchQuery,
   });
   const { data: walletsData } = useListWalletsQuery();
-  const { data: banksData } = useGetBanksQuery();
+  const { data: banksData } = useGetWithdrawalBanksQuery();
   const { data: statsData } = useGetTransactionStatisticsQuery({});
   const [transfer, { isLoading: transferring }] = useTransferMutation();
   const [initiateDeposit, { isLoading: depositing }] = useInitiateDepositMutation();
@@ -152,7 +151,7 @@ export const TransactionsPage = () => {
   const transactions = transactionsData?.data?.data || [];
   const pagination = transactionsData?.data?.pagination;
   const wallets = walletsData?.data?.data || [];
-  const banks = banksData?.data || [];
+  const banks = banksData?.data?.banks || [];
   const stats = statsData?.data;
 
   // Handlers

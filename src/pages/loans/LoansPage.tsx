@@ -137,8 +137,8 @@ export const LoansPage = () => {
   const [disableAutoRepay] = useDisableAutoRepaymentMutation();
 
   const products = productsData?.data || [];
-  const loans = loansData?.data?.data || [];
-  const wallets = walletsData?.data?.data || [];
+  const loans = loansData?.data?.applications || [];
+  const wallets = walletsData?.data || [];
   const creditScore = creditScoreData?.data;
   const summary = summaryData?.data;
 
@@ -448,14 +448,14 @@ export const LoansPage = () => {
               ) : loans.length > 0 ? (
                 <VStack spacing={4} align="stretch">
                   {loans.map((loan: any) => (
-                    <Card key={loan.id}>
+                    <Card key={loan.application_id}>
                       <CardBody>
                         <VStack align="stretch" spacing={4}>
                           <HStack justify="space-between">
                             <VStack align="start" spacing={1}>
-                              <Heading size="sm">{loan.product_name}</Heading>
+                              <Heading size="sm">{loan.loan_product_name}</Heading>
                               <Text fontSize="sm" color="gray.600">
-                                Ref: {loan.reference}
+                                ID: {loan.application_id.slice(0, 8)}...
                               </Text>
                             </VStack>
                             <Badge
@@ -471,18 +471,18 @@ export const LoansPage = () => {
                           <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>
-                                Loan Amount
+                                Requested Amount
                               </Text>
                               <Text fontWeight="600">
-                                {formatCurrency(loan.amount, loan.currency)}
+                                {formatCurrency(loan.requested_amount, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>
-                                Outstanding
+                                {loan.approved_amount ? 'Approved Amount' : 'Total Repayable'}
                               </Text>
-                              <Text fontWeight="600" color="red.600">
-                                {formatCurrency(loan.outstanding_balance, loan.currency)}
+                              <Text fontWeight="600" color={loan.approved_amount ? 'green.600' : 'gray.600'}>
+                                {formatCurrency(loan.approved_amount || loan.total_repayable, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
@@ -490,28 +490,28 @@ export const LoansPage = () => {
                                 Monthly Payment
                               </Text>
                               <Text fontWeight="600">
-                                {formatCurrency(loan.monthly_payment, loan.currency)}
+                                {formatCurrency(loan.monthly_repayment, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>
-                                Next Due Date
+                                Tenure
                               </Text>
-                              <Text fontWeight="600">{formatDate(loan.next_due_date)}</Text>
+                              <Text fontWeight="600">{loan.tenure_months} months</Text>
                             </Box>
                           </SimpleGrid>
 
                           <Box>
                             <HStack justify="space-between" mb={2}>
                               <Text fontSize="sm" color="gray.600">
-                                Repayment Progress
+                                Status
                               </Text>
                               <Text fontSize="sm" fontWeight="600">
-                                {Math.round((loan.amount_paid / loan.total_repayment) * 100)}%
+                                {loan.disbursed_at ? `Disbursed ${formatDate(loan.disbursed_at)}` : 'Pending Approval'}
                               </Text>
                             </HStack>
                             <Progress
-                              value={(loan.amount_paid / loan.total_repayment) * 100}
+                              value={loan.status === 'disbursed' || loan.status === 'active' ? 50 : loan.status === 'approved' ? 75 : 25}
                               colorScheme="brand"
                               borderRadius="full"
                             />

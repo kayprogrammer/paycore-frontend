@@ -37,15 +37,20 @@ export interface SubmitKYCRequest {
   level: KYCLevel;
   first_name: string;
   last_name: string;
+  middle_name?: string;
   date_of_birth: string;
+  nationality: string;
   address_line_1: string;
   address_line_2?: string;
   city: string;
   state: string;
   postal_code: string;
-  country: string;
-  id_type: DocumentType;
-  id_number: string;
+  country_id: string;
+  document_type: DocumentType;
+  document_number: string;
+  document_expiry_date?: string;
+  document_issuing_country_id: string;
+  notes?: string;
   documents: {
     id_document: File;
     selfie: File;

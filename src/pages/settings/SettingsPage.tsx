@@ -28,6 +28,7 @@ import {
   FormControl,
   FormLabel,
   Input,
+  FormErrorMessage,
   AlertDialog,
   AlertDialogOverlay,
   AlertDialogContent,
@@ -61,6 +62,7 @@ import {
 } from '@/features/auth/services/authApi';
 import { formatRelativeTime } from '@/utils/formatters';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '@/utils/formErrorHandler';
 
 interface PasswordForm {
   old_password: string;
@@ -134,12 +136,7 @@ export const SettingsPage = () => {
       onPasswordClose();
       passwordForm.reset();
     } catch (error: any) {
-      toast({
-        title: 'Password change failed',
-        description: error.data?.message || 'An error occurred',
-        status: 'error',
-        duration: 5000,
-      });
+      handleApiError(error, passwordForm.setError, toast);
     }
   };
 
@@ -468,17 +465,20 @@ export const SettingsPage = () => {
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.old_password}>
                   <FormLabel>Current Password</FormLabel>
                   <Input type="password" {...passwordForm.register('old_password')} />
+                  <FormErrorMessage>{passwordForm.formState.errors.old_password?.message as string}</FormErrorMessage>
                 </FormControl>
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.new_password}>
                   <FormLabel>New Password</FormLabel>
                   <Input type="password" {...passwordForm.register('new_password')} />
+                  <FormErrorMessage>{passwordForm.formState.errors.new_password?.message as string}</FormErrorMessage>
                 </FormControl>
-                <FormControl isRequired>
+                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.confirm_password}>
                   <FormLabel>Confirm New Password</FormLabel>
                   <Input type="password" {...passwordForm.register('confirm_password')} />
+                  <FormErrorMessage>{passwordForm.formState.errors.confirm_password?.message as string}</FormErrorMessage>
                 </FormControl>
               </VStack>
             </ModalBody>

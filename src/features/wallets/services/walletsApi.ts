@@ -7,7 +7,6 @@ import type {
   WalletBalance,
   SetPinRequest,
   ChangePinRequest,
-  VerifyPinRequest,
   HoldFundsRequest,
   WalletHold,
   WalletSummary,
@@ -27,9 +26,9 @@ export const walletsApi = baseApi.injectEndpoints({
     }),
 
     // 2. List Wallets
-    listWallets: builder.query<ApiResponse<PaginatedResponse<Wallet>>, QueryParams | void>({
+    listWallets: builder.query<ApiResponse<Wallet[]>, { currency_code?: string; wallet_type?: string; status?: string } | void>({
       query: (params) => ({
-        url: '/wallets',
+        url: '/wallets/list',
         params,
       }),
       providesTags: ['Wallets'],
@@ -51,7 +50,26 @@ export const walletsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Wallets'],
     }),
 
-    // 5. Delete Wallet
+    // 5. Set Default Wallet
+    setDefaultWallet: builder.mutation<ApiResponse<{ message: string }>, string>({
+      query: (walletId) => ({
+        url: `/wallets/wallet/${walletId}/set-default`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Wallets'],
+    }),
+
+    // 6. Change Wallet Status
+    changeWalletStatus: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; status: string }>({
+      query: ({ walletId, status }) => ({
+        url: `/wallets/wallet/${walletId}/status`,
+        method: 'POST',
+        body: { status },
+      }),
+      invalidatesTags: ['Wallets'],
+    }),
+
+    // 7. Delete Wallet
     deleteWallet: builder.mutation<ApiResponse<null>, string>({
       query: (id) => ({
         url: `/wallets/wallet/${id}`,
@@ -60,60 +78,13 @@ export const walletsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Wallets'],
     }),
 
-    // 6. Get Balance
+    // 8. Get Balance
     getWalletBalance: builder.query<ApiResponse<WalletBalance>, string>({
       query: (id) => `/wallets/wallet/${id}/balance`,
       providesTags: ['Wallets'],
     }),
 
-    // 7. Set PIN
-    setPin: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; data: SetPinRequest }>({
-      query: ({ walletId, data }) => ({
-        url: `/wallets/wallet/${walletId}/pin/set`,
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Wallets'],
-    }),
-
-    // 8. Change PIN
-    changePin: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; data: ChangePinRequest }>({
-      query: ({ walletId, data }) => ({
-        url: `/wallets/wallet/${walletId}/pin/change`,
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Wallets'],
-    }),
-
-    // 9. Verify PIN
-    verifyPin: builder.mutation<ApiResponse<{ valid: boolean }>, { walletId: string; data: VerifyPinRequest }>({
-      query: ({ walletId, data }) => ({
-        url: `/wallets/wallet/${walletId}/pin/verify`,
-        method: 'POST',
-        body: data,
-      }),
-    }),
-
-    // 10. Enable Biometric
-    enableBiometric: builder.mutation<ApiResponse<{ message: string }>, string>({
-      query: (walletId) => ({
-        url: `/wallets/wallet/${walletId}/biometric/enable`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Wallets'],
-    }),
-
-    // 11. Disable Biometric
-    disableBiometric: builder.mutation<ApiResponse<{ message: string }>, string>({
-      query: (walletId) => ({
-        url: `/wallets/wallet/${walletId}/biometric/disable`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Wallets'],
-    }),
-
-    // 12. Hold Funds
+    // 9. Hold Funds
     holdFunds: builder.mutation<ApiResponse<WalletHold>, { walletId: string; data: HoldFundsRequest }>({
       query: ({ walletId, data }) => ({
         url: `/wallets/wallet/${walletId}/hold`,
@@ -123,36 +94,76 @@ export const walletsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Wallets'],
     }),
 
-    // 13. Release Hold
-    releaseHold: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; holdId: string }>({
-      query: ({ walletId, holdId }) => ({
-        url: `/wallets/wallet/${walletId}/hold/${holdId}/release`,
+    // 10. Release Held Funds
+    releaseHold: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; data: { amount: string; reference: string } }>({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/release`,
         method: 'POST',
+        body: data,
       }),
       invalidatesTags: ['Wallets'],
     }),
 
-    // 14. Get Summary
+    // 11. Get Summary
     getWalletSummary: builder.query<ApiResponse<WalletSummary>, void>({
       query: () => '/wallets/summary',
       providesTags: ['Wallets'],
     }),
 
-    // 15. Change Status
-    changeWalletStatus: builder.mutation<ApiResponse<Wallet>, { walletId: string; status: string }>({
-      query: ({ walletId, status }) => ({
-        url: `/wallets/wallet/${walletId}/status`,
-        method: 'PATCH',
-        body: { status },
+    // 12. Verify Transaction Authorization
+    verifyTransactionAuth: builder.mutation<
+      ApiResponse<{ authorized: boolean }>,
+      { walletId: string; data: { amount: string; pin?: string; biometric_token?: string; device_id?: string } }
+    >({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/auth`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    // 13. Enable Wallet Security (PIN and/or Biometric)
+    enableWalletSecurity: builder.mutation<
+      ApiResponse<WalletSecurityStatus>,
+      { walletId: string; data: { pin: string; enable_biometric?: boolean } }
+    >({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/security/enable`,
+        method: 'POST',
+        body: data,
       }),
       invalidatesTags: ['Wallets'],
     }),
 
-    // 16. Set Default
-    setDefaultWallet: builder.mutation<ApiResponse<{ message: string }>, string>({
-      query: (walletId) => ({
-        url: `/wallets/wallet/${walletId}/default`,
+    // 14. Disable Wallet Security
+    disableWalletSecurity: builder.mutation<
+      ApiResponse<WalletSecurityStatus>,
+      { walletId: string; data: { current_pin: string; disable_pin?: boolean; disable_biometric?: boolean } }
+    >({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/security/disable`,
         method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Wallets'],
+    }),
+
+    // 15. Set PIN
+    setPin: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; data: SetPinRequest }>({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/pin/set`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Wallets'],
+    }),
+
+    // 16. Change PIN
+    changePin: builder.mutation<ApiResponse<{ message: string }>, { walletId: string; data: ChangePinRequest }>({
+      query: ({ walletId, data }) => ({
+        url: `/wallets/wallet/${walletId}/pin/change`,
+        method: 'POST',
+        body: data,
       }),
       invalidatesTags: ['Wallets'],
     }),
@@ -163,22 +174,37 @@ export const walletsApi = baseApi.injectEndpoints({
       providesTags: ['Wallets'],
     }),
 
-    // 18. Verify Authorization
-    verifyAuthorization: builder.mutation<
-      ApiResponse<{ authorized: boolean }>,
-      { walletId: string; pin?: string; biometric_token?: string }
+    // 18. Process Deposit Webhook (Generic)
+    processDepositWebhook: builder.mutation<
+      ApiResponse<any>,
+      {
+        account_number: string;
+        amount: string;
+        sender_account_number?: string;
+        sender_account_name?: string;
+        sender_bank_name?: string;
+        external_reference: string;
+        narration?: string;
+        transaction_date?: string;
+        webhook_payload?: any;
+      }
     >({
-      query: ({ walletId, ...data }) => ({
-        url: `/wallets/wallet/${walletId}/verify`,
+      query: (data) => ({
+        url: '/wallets/webhooks/deposit',
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['Wallets'],
     }),
 
-    // 19. Get Holds
-    getWalletHolds: builder.query<ApiResponse<WalletHold[]>, string>({
-      query: (walletId) => `/wallets/wallet/${walletId}/holds`,
-      providesTags: ['Wallets'],
+    // 19. Process Paystack Webhook
+    processPaystackWebhook: builder.mutation<ApiResponse<any>, { body: any; signature: string }>({
+      query: ({ body }) => ({
+        url: '/wallets/webhooks/paystack',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Wallets'],
     }),
   }),
 });
@@ -188,19 +214,19 @@ export const {
   useListWalletsQuery,
   useGetWalletQuery,
   useUpdateWalletMutation,
+  useSetDefaultWalletMutation,
+  useChangeWalletStatusMutation,
   useDeleteWalletMutation,
   useGetWalletBalanceQuery,
-  useSetPinMutation,
-  useChangePinMutation,
-  useVerifyPinMutation,
-  useEnableBiometricMutation,
-  useDisableBiometricMutation,
   useHoldFundsMutation,
   useReleaseHoldMutation,
   useGetWalletSummaryQuery,
-  useChangeWalletStatusMutation,
-  useSetDefaultWalletMutation,
+  useVerifyTransactionAuthMutation,
+  useEnableWalletSecurityMutation,
+  useDisableWalletSecurityMutation,
+  useSetPinMutation,
+  useChangePinMutation,
   useGetSecurityStatusQuery,
-  useVerifyAuthorizationMutation,
-  useGetWalletHoldsQuery,
+  useProcessDepositWebhookMutation,
+  useProcessPaystackWebhookMutation,
 } = walletsApi;

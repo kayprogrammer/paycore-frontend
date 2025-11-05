@@ -17,15 +17,20 @@ export const complianceApi = baseApi.injectEndpoints({
         formData.append('level', data.level);
         formData.append('first_name', data.first_name);
         formData.append('last_name', data.last_name);
+        if (data.middle_name) formData.append('middle_name', data.middle_name);
         formData.append('date_of_birth', data.date_of_birth);
+        formData.append('nationality', data.nationality);
         formData.append('address_line_1', data.address_line_1);
         if (data.address_line_2) formData.append('address_line_2', data.address_line_2);
         formData.append('city', data.city);
         formData.append('state', data.state);
         formData.append('postal_code', data.postal_code);
-        formData.append('country', data.country);
-        formData.append('id_type', data.id_type);
-        formData.append('id_number', data.id_number);
+        formData.append('country_id', data.country_id);
+        formData.append('document_type', data.document_type);
+        formData.append('document_number', data.document_number);
+        if (data.document_expiry_date) formData.append('document_expiry_date', data.document_expiry_date);
+        formData.append('document_issuing_country_id', data.document_issuing_country_id);
+        if (data.notes) formData.append('notes', data.notes);
 
         // Append document files
         formData.append('id_document', data.documents.id_document);

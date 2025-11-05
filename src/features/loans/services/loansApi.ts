@@ -20,7 +20,7 @@ export const loansApi = baseApi.injectEndpoints({
     // 1. List Loan Products
     listLoanProducts: builder.query<ApiResponse<LoanProduct[]>, { type?: string }>({
       query: (params) => ({
-        url: '/loans/products',
+        url: '/loans/products/list',
         params,
       }),
       providesTags: ['Loans'],
@@ -60,7 +60,7 @@ export const loansApi = baseApi.injectEndpoints({
       QueryParams | void
     >({
       query: (params) => ({
-        url: '/loans/applications',
+        url: '/loans/applications/list',
         params,
       }),
       providesTags: ['Loans'],

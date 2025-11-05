@@ -22,10 +22,10 @@ export const cardsApi = baseApi.injectEndpoints({
     }),
 
     // 2. List Cards
-    listCards: builder.query<ApiResponse<PaginatedResponse<Card>>, QueryParams | void>({
+    listCards: builder.query<ApiResponse<Card[]>, { status?: string; card_type?: string } | void>({
       query: (params) => ({
         url: '/cards/list',
-        params,
+        params: params || undefined,
       }),
       providesTags: ['Cards'],
     }),
@@ -38,9 +38,9 @@ export const cardsApi = baseApi.injectEndpoints({
 
     // 4. Update Card
     updateCard: builder.mutation<ApiResponse<Card>, { id: string; data: UpdateCardRequest }>({
-      query: ({ id, data }) => ({
+      query: ({ id, data}) => ({
         url: `/cards/card/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: ['Cards'],

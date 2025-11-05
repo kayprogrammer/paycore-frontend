@@ -33,6 +33,7 @@ import { useLazyGetProfileQuery } from '@/features/profile/services/profileApi';
 import { useAppDispatch } from '@/hooks';
 import { setCredentials } from '@/store/slices/authSlice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { handleApiError } from '@/utils/formErrorHandler';
 
 // Password strength checker
 const checkPasswordStrength = (password: string): number => {
@@ -97,6 +98,7 @@ export const RegisterPage = () => {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: yupResolver(registerSchema),
@@ -133,13 +135,7 @@ export const RegisterPage = () => {
       // Redirect to login
       navigate('/login');
     } catch (error: any) {
-      toast({
-        title: 'Registration Failed',
-        description: error?.data?.message || 'Could not create account',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      handleApiError(error, setError, toast);
     }
   };
 
@@ -181,10 +177,11 @@ export const RegisterPage = () => {
           email: '', // Will be populated from another source if needed
           first_name: profileData.first_name,
           last_name: profileData.last_name,
-          phone_number: null,
+          phone_number: profileData.phone_number,
+          avatar: profileData.avatar_url || null,
           is_active: true,
           is_staff: false,
-          kyc_level: 'tier_0',
+          kyc_level: profileData.kyc_level || 'tier_0',
           created_at: new Date().toISOString(),
         };
 
