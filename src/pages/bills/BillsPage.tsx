@@ -69,7 +69,7 @@ interface PaymentForm {
   wallet_id: string;
   provider_id: string;
   package_id?: string;
-  customer_identifier: string;
+  customer_id: string;
   amount?: number;
   pin: string;
 }
@@ -115,7 +115,7 @@ export const BillsPage = () => {
 
   const providers = providersData?.data || [];
   const packages = packagesData?.data || [];
-  const wallets = walletsData?.data?.data || [];
+  const wallets = walletsData?.data || [];
   const payments = paymentsData?.data?.data || [];
 
   // Handlers
@@ -135,10 +135,9 @@ export const BillsPage = () => {
   };
 
   const handleValidateCustomer = async () => {
-    const customerId = paymentForm.getValues('customer_identifier');
-    const providerId = paymentForm.getValues('provider_id');
+    const customerId = paymentForm.getValues('customer_id');
 
-    if (!customerId || !providerId) {
+    if (!customerId) {
       toast({
         title: 'Please enter customer ID',
         status: 'warning',
@@ -147,10 +146,19 @@ export const BillsPage = () => {
       return;
     }
 
+    if (!selectedProvider) {
+      toast({
+        title: 'Please select a provider first',
+        status: 'warning',
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       const result = await validateCustomer({
-        provider_id: providerId,
-        customer_identifier: customerId,
+        provider_id: selectedProvider.provider_id || selectedProvider.id,
+        customer_id: customerId,
       }).unwrap();
       setValidatedCustomer(result.data);
       toast({
@@ -179,10 +187,23 @@ export const BillsPage = () => {
       return;
     }
 
+    if (!selectedProvider) {
+      toast({
+        title: 'Provider not selected',
+        status: 'warning',
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       await payBill({
-        ...data,
-        amount: data.amount || selectedPackage?.price,
+        wallet_id: data.wallet_id,
+        provider_id: selectedProvider.provider_id || selectedProvider.id,
+        customer_id: data.customer_id,
+        package_id: data.package_id,
+        amount: data.amount || selectedPackage?.price || 0,
+        phone_number: data.customer_id, // For airtime/data
       }).unwrap();
       toast({
         title: 'Payment successful',
@@ -196,9 +217,23 @@ export const BillsPage = () => {
       setSelectedPackage(null);
       setValidatedCustomer(null);
     } catch (error: any) {
+      // Handle validation errors
+      let errorMessage = error.data?.message || 'An error occurred';
+
+      if (error.data?.data && typeof error.data.data === 'object') {
+        // Format validation errors
+        const validationErrors = Object.entries(error.data.data)
+          .map(([field, msgs]: [string, any]) => {
+            const messages = Array.isArray(msgs) ? msgs : [msgs];
+            return `${field}: ${messages.join(', ')}`;
+          })
+          .join('\n');
+        errorMessage = validationErrors || errorMessage;
+      }
+
       toast({
         title: 'Payment failed',
-        description: error.data?.message || 'An error occurred',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
       });
@@ -378,7 +413,7 @@ export const BillsPage = () => {
                   </FormLabel>
                   <HStack>
                     <Input
-                      {...paymentForm.register('customer_identifier')}
+                      {...paymentForm.register('customer_id')}
                       placeholder="Enter customer ID"
                     />
                     <Button onClick={handleValidateCustomer} isLoading={validating}>
@@ -424,8 +459,8 @@ export const BillsPage = () => {
                   <FormLabel>Payment Wallet</FormLabel>
                   <Select {...paymentForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
                       </option>
                     ))}
                   </Select>

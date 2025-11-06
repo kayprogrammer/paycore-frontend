@@ -112,10 +112,10 @@ export const transactionsApi = baseApi.injectEndpoints({
       ApiResponse<BankAccount>,
       { account_number: string; bank_code: string; currency_code?: string }
     >({
-      query: (data) => ({
+      query: ({ account_number, bank_code, currency_code = 'NGN' }) => ({
         url: '/transactions/withdrawal/verify-account',
         method: 'POST',
-        body: data,
+        params: { account_number, bank_code, currency_code },
       }),
     }),
 

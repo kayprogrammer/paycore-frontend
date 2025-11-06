@@ -37,7 +37,7 @@ export const loansApi = baseApi.injectEndpoints({
       query: (data) => ({
         url: '/loans/calculate',
         method: 'POST',
-        body: data,
+        params: data,
       }),
     }),
 

@@ -38,7 +38,7 @@ export const billsApi = baseApi.injectEndpoints({
     // 4. Validate Customer
     validateCustomer: builder.mutation<ApiResponse<ValidateCustomerResponse>, ValidateCustomerRequest>({
       query: (data) => ({
-        url: '/bills/validate',
+        url: '/bills/validate-customer',
         method: 'POST',
         body: data,
       }),

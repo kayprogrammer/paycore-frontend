@@ -23,11 +23,6 @@ import {
   Input,
   Select,
   useToast,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
   Skeleton,
   Table,
   Thead,
@@ -45,6 +40,13 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  Progress,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Checkbox,
+  Divider,
 } from '@chakra-ui/react';
 import {
   FiSend,
@@ -57,7 +59,7 @@ import {
   FiAlertCircle,
   FiRefreshCw,
 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   useListTransactionsQuery,
@@ -75,7 +77,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
 import { KYCRequired } from '@/components/common/KYCRequired';
-import { isKYCRequiredError } from '@/utils/errorHandlers';
+import { isKYCRequiredError, getErrorMessage } from '@/utils/errorHandlers';
 
 interface TransferForm {
   wallet_id: string;
@@ -83,7 +85,8 @@ interface TransferForm {
   recipient_email?: string;
   amount: number;
   description: string;
-  pin: string;
+  pin?: string;
+  use_biometric?: boolean;
 }
 
 interface DepositForm {
@@ -102,9 +105,8 @@ interface WithdrawalForm {
 }
 
 interface DisputeForm {
-  transaction_id: string;
+  dispute_type: string;
   reason: string;
-  description: string;
 }
 
 export const TransactionsPage = () => {
@@ -117,6 +119,9 @@ export const TransactionsPage = () => {
   const [filterType, setFilterType] = useState('');
   const [page, setPage] = useState(1);
   const [verifiedAccount, setVerifiedAccount] = useState<any>(null);
+  const [depositProgress, setDepositProgress] = useState(0);
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
+  const [useBiometric, setUseBiometric] = useState(false);
 
   // Modals
   const { isOpen: isTransferOpen, onOpen: onTransferOpen, onClose: onTransferClose } = useDisclosure();
@@ -134,32 +139,194 @@ export const TransactionsPage = () => {
   // API
   const { data: transactionsData, isLoading, error, refetch } = useListTransactionsQuery({
     page,
-    limit: 20,
-    status: filterStatus,
-    transaction_type: filterType,
-    search: searchQuery,
+    limit: 10,
+    ...(filterStatus && { status: filterStatus }),
+    ...(filterType && { transaction_type: filterType }),
+    ...(searchQuery && { search: searchQuery }),
   });
-  const { data: walletsData } = useListWalletsQuery();
+  const { data: walletsData, refetch: refetchWallets } = useListWalletsQuery();
   const { data: banksData } = useGetWithdrawalBanksQuery();
-  const { data: statsData } = useGetTransactionStatisticsQuery({});
+  const { data: statsData, refetch: refetchStats } = useGetTransactionStatisticsQuery({});
   const [transfer, { isLoading: transferring }] = useTransferMutation();
   const [initiateDeposit, { isLoading: depositing }] = useInitiateDepositMutation();
   const [initiateWithdrawal, { isLoading: withdrawing }] = useInitiateWithdrawalMutation();
   const [verifyBankAccount, { isLoading: verifying }] = useVerifyBankAccountMutation();
   const [createDispute, { isLoading: disputing }] = useCreateDisputeMutation();
 
-  const transactions = transactionsData?.data?.data || [];
-  const pagination = transactionsData?.data?.pagination;
-  const wallets = walletsData?.data?.data || [];
+  const transactions = transactionsData?.data?.transactions || [];
+  const pagination = transactionsData?.data ? {
+    total: transactionsData.data.total,
+    limit: transactionsData.data.limit,
+    page: transactionsData.data.page,
+    total_pages: transactionsData.data.total_pages,
+  } : undefined;
+  const wallets = walletsData?.data || [];
   const banks = banksData?.data?.banks || [];
   const stats = statsData?.data;
+
+  // Biometric authentication helper
+  const authenticateWithBiometric = async (): Promise<{ biometric_token: string; device_id: string } | null> => {
+    try {
+      // Check if WebAuthn is supported
+      if (!window.PublicKeyCredential) {
+        toast({
+          title: 'Biometric not supported',
+          description: 'Your device does not support biometric authentication',
+          status: 'error',
+          duration: 5000,
+        });
+        return null;
+      }
+
+      // Check if user has already enrolled biometrics
+      const storedToken = localStorage.getItem('biometric_trust_token');
+      const storedDeviceId = localStorage.getItem('biometric_device_id');
+
+      if (storedToken && storedDeviceId) {
+        // User already has a trust token, just prompt for Touch ID to confirm
+        try {
+          // Create a challenge to trigger Touch ID prompt
+          const challenge = new Uint8Array(32);
+          crypto.getRandomValues(challenge);
+
+          const userId = new Uint8Array(16);
+          crypto.getRandomValues(userId);
+
+          // This will prompt for Touch ID
+          await navigator.credentials.create({
+            publicKey: {
+              challenge,
+              rp: {
+                name: "PayCore",
+                id: window.location.hostname,
+              },
+              user: {
+                id: userId,
+                name: "user@paycore.com",
+                displayName: "PayCore User",
+              },
+              pubKeyCredParams: [
+                { type: "public-key", alg: -7 },  // ES256
+                { type: "public-key", alg: -257 }, // RS256
+              ],
+              authenticatorSelection: {
+                authenticatorAttachment: "platform",
+                userVerification: "required",
+              },
+              timeout: 60000,
+            },
+          });
+
+          // Touch ID succeeded, return the stored token
+          return { biometric_token: storedToken, device_id: storedDeviceId };
+        } catch (error: any) {
+          if (error.name === 'NotAllowedError') {
+            toast({
+              title: 'Authentication cancelled',
+              description: 'Touch ID authentication was cancelled',
+              status: 'warning',
+              duration: 3000,
+            });
+          }
+          return null;
+        }
+      }
+
+      // First time enrollment - need to register with backend
+      toast({
+        title: 'Biometric enrollment required',
+        description: 'Please wait while we enroll your biometrics...',
+        status: 'info',
+        duration: 3000,
+      });
+
+      // Generate device ID
+      const device_id = `device_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+      // Call backend to enable biometrics and get trust token
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${API_BASE_URL}/auth/biometrics/enable`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ device_id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to enable biometrics');
+      }
+
+      const data = await response.json();
+      const trust_token = data.data.trust_token;
+
+      // Store the trust token
+      localStorage.setItem('biometric_trust_token', trust_token);
+      localStorage.setItem('biometric_device_id', device_id);
+
+      toast({
+        title: 'Biometric enrolled',
+        description: 'You can now use biometrics for authentication',
+        status: 'success',
+        duration: 3000,
+      });
+
+      return { biometric_token: trust_token, device_id };
+    } catch (error: any) {
+      if (error.name === 'NotAllowedError') {
+        toast({
+          title: 'Authentication cancelled',
+          description: 'Touch ID authentication was cancelled',
+          status: 'warning',
+          duration: 3000,
+        });
+      } else if (error.name === 'NotSupportedError') {
+        toast({
+          title: 'Touch ID not available',
+          description: 'Touch ID is not configured on this device. Please use PIN instead.',
+          status: 'error',
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: 'Authentication failed',
+          description: error.message || 'Failed to authenticate with Touch ID',
+          status: 'error',
+          duration: 5000,
+        });
+      }
+      return null;
+    }
+  };
 
   // Handlers
   const handleTransfer = async (data: TransferForm) => {
     try {
+      let biometric_token: string | undefined;
+      let device_id: string | undefined;
+
+      // If biometric is selected, authenticate
+      if (useBiometric) {
+        const biometricResult = await authenticateWithBiometric();
+        if (!biometricResult) {
+          // Authentication failed or was cancelled
+          return;
+        }
+        biometric_token = biometricResult.biometric_token;
+        device_id = biometricResult.device_id;
+      }
+
       await transfer({
-        ...data,
+        from_wallet_id: data.wallet_id,
+        to_wallet_id: data.recipient_wallet_id!,
         amount: Number(data.amount),
+        description: data.description,
+        pin: useBiometric ? undefined : data.pin,
+        biometric_token,
+        device_id,
       }).unwrap();
       toast({
         title: 'Transfer successful',
@@ -168,11 +335,12 @@ export const TransactionsPage = () => {
       });
       onTransferClose();
       transferForm.reset();
+      setUseBiometric(false);
       refetch();
     } catch (error: any) {
       toast({
         title: 'Transfer failed',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -185,31 +353,98 @@ export const TransactionsPage = () => {
         ...data,
         amount: Number(data.amount),
       }).unwrap();
-      toast({
-        title: 'Deposit initiated',
-        description: 'Complete the payment to fund your wallet',
-        status: 'success',
-        duration: 5000,
-      });
-      // Redirect to payment gateway if needed
-      if (result.data?.payment_url) {
-        window.open(result.data.payment_url, '_blank');
+
+      // Check if this is an internal provider with pending status
+      const isPending = result.data?.status === 'pending';
+
+      if (isPending) {
+        // Show processing indicator with progress bar
+        setIsProcessingDeposit(true);
+        setDepositProgress(0);
+
+        toast({
+          title: 'Deposit initiated',
+          description: 'Processing your deposit... This will take about 15 seconds.',
+          status: 'info',
+          duration: 5000,
+        });
+      } else {
+        // Instant completion or external payment
+        toast({
+          title: 'Deposit initiated',
+          description: result.data?.payment_url
+            ? 'Complete the payment to fund your wallet'
+            : 'Deposit completed successfully',
+          status: 'success',
+          duration: 5000,
+        });
+
+        // Redirect to payment gateway if needed
+        if (result.data?.payment_url) {
+          window.open(result.data.payment_url, '_blank');
+        }
       }
+
       onDepositClose();
       depositForm.reset();
     } catch (error: any) {
       toast({
         title: 'Deposit failed',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
     }
   };
 
+  // Progress tracking effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout;
+
+    if (isProcessingDeposit) {
+      // Update progress every 150ms (15000ms / 100 steps)
+      interval = setInterval(() => {
+        setDepositProgress((prev) => {
+          if (prev >= 100) return 100;
+          return prev + 1;
+        });
+      }, 150);
+
+      // After 15 seconds, complete and refresh
+      timeout = setTimeout(async () => {
+        setIsProcessingDeposit(false);
+        setDepositProgress(0);
+
+        // Refresh all data
+        await Promise.all([
+          refetch(),
+          refetchWallets(),
+          refetchStats(),
+        ]);
+
+        toast({
+          title: 'Deposit confirmed!',
+          description: 'Your wallet has been funded successfully.',
+          status: 'success',
+          duration: 5000,
+        });
+      }, 15000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isProcessingDeposit, refetch, refetchWallets, refetchStats, toast]);
+
   const handleVerifyAccount = async () => {
-    const accountNumber = withdrawForm.getValues('account_number');
-    const bankCode = withdrawForm.getValues('bank_code');
+    // Use watch to get the latest form values
+    const formValues = withdrawForm.getValues();
+    const accountNumber = formValues.account_number;
+    const bankCode = formValues.bank_code;
+
+    console.log('Form values:', { accountNumber, bankCode, allValues: formValues });
 
     if (!accountNumber || !bankCode) {
       toast({
@@ -221,10 +456,14 @@ export const TransactionsPage = () => {
     }
 
     try {
-      const result = await verifyBankAccount({
-        account_number: accountNumber,
-        bank_code: bankCode,
-      }).unwrap();
+      const payload = {
+        account_number: accountNumber.trim(),
+        bank_code: bankCode.trim(),
+      };
+
+      console.log('Sending payload:', payload);
+
+      const result = await verifyBankAccount(payload).unwrap();
       setVerifiedAccount(result.data);
       withdrawForm.setValue('account_name', result.data?.account_name);
       toast({
@@ -234,9 +473,10 @@ export const TransactionsPage = () => {
         duration: 5000,
       });
     } catch (error: any) {
+      console.error('Verification error:', error);
       toast({
         title: 'Verification failed',
-        description: error.data?.message || 'Could not verify account',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -255,8 +495,16 @@ export const TransactionsPage = () => {
 
     try {
       await initiateWithdrawal({
-        ...data,
+        wallet_id: data.wallet_id,
         amount: Number(data.amount),
+        destination: 'bank_account',
+        account_details: {
+          account_number: data.account_number,
+          account_name: data.account_name || verifiedAccount.account_name,
+          bank_code: data.bank_code,
+          bank_name: verifiedAccount.bank_name,
+        },
+        pin: data.pin ? Number(data.pin) : undefined,
       }).unwrap();
       toast({
         title: 'Withdrawal initiated',
@@ -271,7 +519,7 @@ export const TransactionsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Withdrawal failed',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -279,8 +527,24 @@ export const TransactionsPage = () => {
   };
 
   const handleDispute = async (data: DisputeForm) => {
+    if (!selectedTransaction?.transaction_id) {
+      toast({
+        title: 'Error',
+        description: 'No transaction selected',
+        status: 'error',
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
-      await createDispute(data).unwrap();
+      await createDispute({
+        transactionId: selectedTransaction.transaction_id,
+        data: {
+          dispute_type: data.dispute_type,
+          reason: data.reason,
+        },
+      }).unwrap();
       toast({
         title: 'Dispute created',
         description: 'We will review your dispute and get back to you',
@@ -293,7 +557,7 @@ export const TransactionsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to create dispute',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -346,6 +610,42 @@ export const TransactionsPage = () => {
           </HStack>
         </HStack>
 
+        {/* Deposit Processing Alert */}
+        {isProcessingDeposit && (
+          <Alert
+            status="info"
+            variant="subtle"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            textAlign="center"
+            borderRadius="md"
+            p={6}
+          >
+            <AlertIcon boxSize="40px" mr={0} />
+            <AlertTitle mt={4} mb={1} fontSize="lg">
+              Processing Deposit
+            </AlertTitle>
+            <AlertDescription maxWidth="sm" mb={4}>
+              Your deposit is being processed. This typically takes about 15 seconds.
+              The page will automatically refresh when complete.
+            </AlertDescription>
+            <Box width="full" maxW="md">
+              <Progress
+                value={depositProgress}
+                size="lg"
+                colorScheme="blue"
+                hasStripe
+                isAnimated
+                borderRadius="md"
+              />
+              <Text mt={2} fontSize="sm" color="gray.600">
+                {depositProgress}% complete
+              </Text>
+            </Box>
+          </Alert>
+        )}
+
         {/* Statistics */}
         {stats && (
           <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
@@ -363,7 +663,10 @@ export const TransactionsPage = () => {
                 <Stat>
                   <StatLabel>Total Volume</StatLabel>
                   <StatNumber fontSize="xl">
-                    {formatCurrency(stats.total_volume || 0, 'NGN')}
+                    {formatCurrency(
+                      (parseFloat(stats.total_sent || '0') + parseFloat(stats.total_received || '0')),
+                      'NGN'
+                    )}
                   </StatNumber>
                   <StatHelpText>All time</StatHelpText>
                 </Stat>
@@ -374,7 +677,7 @@ export const TransactionsPage = () => {
                 <Stat>
                   <StatLabel>Money In</StatLabel>
                   <StatNumber fontSize="xl" color="green.600">
-                    {formatCurrency(stats.total_credits || 0, 'NGN')}
+                    {formatCurrency(parseFloat(stats.total_received || '0'), 'NGN')}
                   </StatNumber>
                   <StatHelpText>Credits</StatHelpText>
                 </Stat>
@@ -385,7 +688,7 @@ export const TransactionsPage = () => {
                 <Stat>
                   <StatLabel>Money Out</StatLabel>
                   <StatNumber fontSize="xl" color="red.600">
-                    {formatCurrency(stats.total_debits || 0, 'NGN')}
+                    {formatCurrency(parseFloat(stats.total_sent || '0'), 'NGN')}
                   </StatNumber>
                   <StatHelpText>Debits</StatHelpText>
                 </Stat>
@@ -505,7 +808,7 @@ export const TransactionsPage = () => {
                           </Badge>
                         </Td>
                         <Td fontSize="sm" color="gray.600">
-                          {formatRelativeTime(transaction.created_at)}
+                          {formatRelativeTime(transaction.completed_at || transaction.initiated_at)}
                         </Td>
                         <Td>
                           <HStack spacing={2}>
@@ -535,21 +838,71 @@ export const TransactionsPage = () => {
 
                 {/* Pagination */}
                 {pagination && pagination.total_pages > 1 && (
-                  <HStack justify="center" mt={6} spacing={2}>
+                  <HStack justify="center" mt={6} spacing={1}>
                     <Button
                       size="sm"
                       onClick={() => setPage(page - 1)}
                       isDisabled={page === 1}
+                      variant="ghost"
                     >
                       Previous
                     </Button>
-                    <Text fontSize="sm">
-                      Page {page} of {pagination.total_pages}
-                    </Text>
+
+                    {/* First page */}
+                    {page > 3 && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => setPage(1)}
+                          variant="ghost"
+                        >
+                          1
+                        </Button>
+                        {page > 4 && (
+                          <Text px={2} color="gray.500">...</Text>
+                        )}
+                      </>
+                    )}
+
+                    {/* Page numbers around current page */}
+                    {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
+                      .filter(pageNum => {
+                        // Show current page and 2 pages on each side
+                        return pageNum >= page - 2 && pageNum <= page + 2;
+                      })
+                      .map(pageNum => (
+                        <Button
+                          key={pageNum}
+                          size="sm"
+                          onClick={() => setPage(pageNum)}
+                          colorScheme={pageNum === page ? "brand" : "gray"}
+                          variant={pageNum === page ? "solid" : "ghost"}
+                        >
+                          {pageNum}
+                        </Button>
+                      ))}
+
+                    {/* Last page */}
+                    {page < pagination.total_pages - 2 && (
+                      <>
+                        {page < pagination.total_pages - 3 && (
+                          <Text px={2} color="gray.500">...</Text>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => setPage(pagination.total_pages)}
+                          variant="ghost"
+                        >
+                          {pagination.total_pages}
+                        </Button>
+                      </>
+                    )}
+
                     <Button
                       size="sm"
                       onClick={() => setPage(page + 1)}
                       isDisabled={page === pagination.total_pages}
+                      variant="ghost"
                     >
                       Next
                     </Button>
@@ -581,40 +934,20 @@ export const TransactionsPage = () => {
                   <FormLabel>From Wallet</FormLabel>
                   <Select {...transferForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
                       </option>
                     ))}
                   </Select>
                 </FormControl>
 
-                <Tabs width="full" variant="enclosed">
-                  <TabList>
-                    <Tab>To Wallet ID</Tab>
-                    <Tab>To Email</Tab>
-                  </TabList>
-                  <TabPanels>
-                    <TabPanel px={0}>
-                      <FormControl>
-                        <FormLabel>Recipient Wallet ID</FormLabel>
-                        <Input
-                          {...transferForm.register('recipient_wallet_id')}
-                          placeholder="Enter wallet ID"
-                        />
-                      </FormControl>
-                    </TabPanel>
-                    <TabPanel px={0}>
-                      <FormControl>
-                        <FormLabel>Recipient Email</FormLabel>
-                        <Input
-                          type="email"
-                          {...transferForm.register('recipient_email')}
-                          placeholder="Enter email address"
-                        />
-                      </FormControl>
-                    </TabPanel>
-                  </TabPanels>
-                </Tabs>
+                <FormControl isRequired>
+                  <FormLabel>Recipient Wallet ID</FormLabel>
+                  <Input
+                    {...transferForm.register('recipient_wallet_id')}
+                    placeholder="Enter recipient wallet ID"
+                  />
+                </FormControl>
 
                 <FormControl isRequired>
                   <FormLabel>Amount</FormLabel>
@@ -631,15 +964,39 @@ export const TransactionsPage = () => {
                   <Input {...transferForm.register('description')} placeholder="What's this for?" />
                 </FormControl>
 
-                <FormControl isRequired>
-                  <FormLabel>Wallet PIN</FormLabel>
-                  <Input
-                    type="password"
-                    maxLength={4}
-                    {...transferForm.register('pin')}
-                    placeholder="Enter your PIN"
-                  />
-                </FormControl>
+                <Divider />
+
+                <Checkbox
+                  isChecked={useBiometric}
+                  onChange={(e) => setUseBiometric(e.target.checked)}
+                  colorScheme="brand"
+                >
+                  Use biometric authentication (fingerprint/face ID)
+                </Checkbox>
+
+                {!useBiometric && (
+                  <FormControl isRequired>
+                    <FormLabel>Wallet PIN</FormLabel>
+                    <Input
+                      type="password"
+                      maxLength={4}
+                      {...transferForm.register('pin')}
+                      placeholder="Enter your 4-digit PIN"
+                    />
+                  </FormControl>
+                )}
+
+                {useBiometric && (
+                  <Alert status="info" borderRadius="md">
+                    <AlertIcon />
+                    <Box>
+                      <AlertTitle fontSize="sm">Biometric Authentication</AlertTitle>
+                      <AlertDescription fontSize="sm">
+                        You'll be prompted to authenticate with your fingerprint or face ID when you submit.
+                      </AlertDescription>
+                    </Box>
+                  </Alert>
+                )}
               </VStack>
             </ModalBody>
             <ModalFooter>
@@ -667,8 +1024,8 @@ export const TransactionsPage = () => {
                   <FormLabel>To Wallet</FormLabel>
                   <Select {...depositForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} ({wallet.currency})
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} ({wallet.currency?.code || 'NGN'})
                       </option>
                     ))}
                   </Select>
@@ -719,8 +1076,8 @@ export const TransactionsPage = () => {
                   <FormLabel>From Wallet</FormLabel>
                   <Select {...withdrawForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
                       </option>
                     ))}
                   </Select>
@@ -741,7 +1098,7 @@ export const TransactionsPage = () => {
                   <FormLabel>Account Number</FormLabel>
                   <HStack>
                     <Input {...withdrawForm.register('account_number')} placeholder="0000000000" />
-                    <Button onClick={handleVerifyAccount} isLoading={verifying}>
+                    <Button type="button" onClick={handleVerifyAccount} isLoading={verifying}>
                       Verify
                     </Button>
                   </HStack>
@@ -797,22 +1154,24 @@ export const TransactionsPage = () => {
             <ModalBody>
               <VStack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Reason</FormLabel>
-                  <Select {...disputeForm.register('reason')} placeholder="Select reason">
+                  <FormLabel>Dispute Type</FormLabel>
+                  <Select {...disputeForm.register('dispute_type')} placeholder="Select dispute type">
                     <option value="unauthorized">Unauthorized Transaction</option>
-                    <option value="incorrect_amount">Incorrect Amount</option>
-                    <option value="duplicate">Duplicate Transaction</option>
-                    <option value="service_not_received">Service Not Received</option>
+                    <option value="duplicate">Duplicate Charge</option>
+                    <option value="not_received">Services/Goods Not Received</option>
+                    <option value="defective">Defective Product/Service</option>
+                    <option value="refund_not_processed">Refund Not Processed</option>
                     <option value="other">Other</option>
                   </Select>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Reason</FormLabel>
                   <Textarea
-                    {...disputeForm.register('description')}
-                    placeholder="Provide details about the issue..."
+                    {...disputeForm.register('reason')}
+                    placeholder="Provide detailed explanation about the issue (minimum 10 characters)..."
                     rows={5}
+                    minLength={10}
                   />
                 </FormControl>
               </VStack>
@@ -838,32 +1197,38 @@ export const TransactionsPage = () => {
           <ModalBody>
             {selectedTransaction && (
               <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
-                  <Text color="gray.600">Reference</Text>
-                  <Text fontFamily="mono" fontSize="sm">
-                    {selectedTransaction.reference}
-                  </Text>
-                </HStack>
+                {selectedTransaction.reference && (
+                  <HStack justify="space-between">
+                    <Text color="gray.600">Reference</Text>
+                    <Text fontFamily="mono" fontSize="sm">
+                      {selectedTransaction.reference || 'N/A'}
+                    </Text>
+                  </HStack>
+                )}
                 <HStack justify="space-between">
                   <Text color="gray.600">Type</Text>
-                  <Badge>{selectedTransaction.transaction_type}</Badge>
+                  <Badge>{selectedTransaction.transaction_type || 'N/A'}</Badge>
                 </HStack>
                 <HStack justify="space-between">
                   <Text color="gray.600">Amount</Text>
                   <Text fontWeight="bold" fontSize="lg">
-                    {formatCurrency(selectedTransaction.amount, selectedTransaction.currency)}
+                    {formatCurrency(selectedTransaction.amount || 0, selectedTransaction.currency || 'NGN')}
                   </Text>
                 </HStack>
                 <HStack justify="space-between">
                   <Text color="gray.600">Status</Text>
-                  <Badge colorScheme={getStatusColor(selectedTransaction.status)}>
-                    {selectedTransaction.status}
+                  <Badge colorScheme={getStatusColor(selectedTransaction.status || 'pending')}>
+                    {selectedTransaction.status || 'N/A'}
                   </Badge>
                 </HStack>
-                <HStack justify="space-between">
-                  <Text color="gray.600">Date</Text>
-                  <Text fontSize="sm">{formatDateTime(selectedTransaction.created_at)}</Text>
-                </HStack>
+                {(selectedTransaction.completed_at || selectedTransaction.initiated_at) && (
+                  <HStack justify="space-between">
+                    <Text color="gray.600">Date</Text>
+                    <Text fontSize="sm">
+                      {formatDateTime(selectedTransaction.completed_at || selectedTransaction.initiated_at)}
+                    </Text>
+                  </HStack>
+                )}
                 {selectedTransaction.description && (
                   <Box>
                     <Text color="gray.600" mb={1}>

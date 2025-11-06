@@ -5,8 +5,6 @@ import {
   Text,
   VStack,
   HStack,
-  Card,
-  CardBody,
   Button,
   Badge,
   Icon,
@@ -79,23 +77,24 @@ import {
   useUpdateCardControlsMutation,
   useGetCardTransactionsQuery,
 } from '@/features/cards/services/cardsApi';
-import { useListWalletsQuery } from '@/features/wallets/services/walletsApi';
+import { useListWalletsQuery, useListCurrenciesQuery } from '@/features/wallets/services/walletsApi';
 import { formatCurrency, formatRelativeTime, getStatusColor, maskCardNumber } from '@/utils/formatters';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
 import { KYCRequired } from '@/components/common/KYCRequired';
-import { isKYCRequiredError } from '@/utils/errorHandlers';
+import { isKYCRequiredError, getErrorMessage } from '@/utils/errorHandlers';
 
 interface CreateCardForm {
   wallet_id: string;
   card_type: string;
-  name_on_card: string;
-  brand: string;
+  card_brand: string;
+  currency_code: string;
+  nickname?: string;
 }
 
 interface FundCardForm {
-  amount: number;
-  pin: string;
+  amount: string;
+  pin?: string;
 }
 
 export const CardsPage = () => {
@@ -122,6 +121,7 @@ export const CardsPage = () => {
   // API
   const { data: cardsData, isLoading, error } = useListCardsQuery();
   const { data: walletsData } = useListWalletsQuery();
+  const { data: currenciesData } = useListCurrenciesQuery();
   const [createCard, { isLoading: creating }] = useCreateCardMutation();
   const [deleteCard, { isLoading: deleting }] = useDeleteCardMutation();
   const [fundCard, { isLoading: funding }] = useFundCardMutation();
@@ -131,8 +131,9 @@ export const CardsPage = () => {
   const [activateCard] = useActivateCardMutation();
   const [updateCardControls] = useUpdateCardControlsMutation();
 
-  const cards = cardsData?.data?.data || [];
-  const wallets = walletsData?.data?.data || [];
+  const cards = cardsData?.data || [];
+  const wallets = walletsData?.data || [];
+  const currencies = currenciesData?.data || [];
 
   // Handlers
   const handleCreate = async (data: CreateCardForm) => {
@@ -149,7 +150,7 @@ export const CardsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to create card',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -160,11 +161,10 @@ export const CardsPage = () => {
     if (!selectedCard) return;
     try {
       await fundCard({
-        cardId: selectedCard.id,
+        cardId: selectedCard.card_id,
         data: {
-          amount: data.amount,
-          wallet_id: selectedCard.wallet_id,
-          pin: data.pin,
+          amount: Number(data.amount),
+          pin: data.pin ? Number(data.pin) : undefined,
         },
       }).unwrap();
       toast({
@@ -178,7 +178,7 @@ export const CardsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to fund card',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -199,7 +199,7 @@ export const CardsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to delete card',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -221,7 +221,7 @@ export const CardsPage = () => {
     } catch (error: any) {
       toast({
         title: `Failed to ${freeze ? 'freeze' : 'unfreeze'} card`,
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -229,30 +229,70 @@ export const CardsPage = () => {
   };
 
   const handleBlock = async (cardId: string) => {
+    // Show confirmation since this is permanent
+    const confirmed = window.confirm(
+      'Are you sure you want to block this card permanently?\n\n' +
+      'This action CANNOT be undone. Blocked cards cannot be unblocked.\n\n' +
+      'If you might want to use this card again, consider using "Freeze Card" instead.'
+    );
+
+    if (!confirmed) return;
+
     try {
       await blockCard(cardId).unwrap();
       toast({
-        title: 'Card blocked successfully',
+        title: 'Card blocked permanently',
         description: 'This action cannot be undone',
         status: 'warning',
-        duration: 3000,
+        duration: 5000,
       });
     } catch (error: any) {
       toast({
         title: 'Failed to block card',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
     }
   };
 
-  const handleControlToggle = async (cardId: string, control: string, value: boolean) => {
+  const handleActivate = async (cardId: string) => {
     try {
+      await activateCard(cardId).unwrap();
+      toast({
+        title: 'Card activated successfully',
+        description: 'Your card is now ready to use',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to activate card',
+        description: getErrorMessage(error),
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleControlToggle = async (card: any, control: string, value: boolean) => {
+    try {
+      // Backend requires all three fields, so we send current values with the updated one
+      const data = {
+        allow_online_transactions: card.allow_online_transactions,
+        allow_atm_withdrawals: card.allow_atm_withdrawals,
+        allow_international_transactions: card.allow_international_transactions,
+        [control]: value, // Override the specific control being changed
+      };
+
       await updateCardControls({
-        cardId,
-        data: { [control]: value },
+        cardId: card.card_id,
+        data,
       }).unwrap();
+
+      // Update the selected card state to reflect the change immediately
+      setSelectedCard({ ...card, [control]: value });
+
       toast({
         title: 'Card controls updated',
         status: 'success',
@@ -261,7 +301,7 @@ export const CardsPage = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to update controls',
-        description: error.data?.message || 'An error occurred',
+        description: getErrorMessage(error),
         status: 'error',
         duration: 5000,
       });
@@ -292,13 +332,26 @@ export const CardsPage = () => {
     setShowCvv((prev) => ({ ...prev, [cardId]: !prev[cardId] }));
   };
 
-  const getCardBrandColor = (brand: string) => {
+  const getCardBrandColor = (brand: string | undefined) => {
+    if (!brand) return '#805AD5'; // purple.600
+
     const colors: { [key: string]: string } = {
-      visa: 'blue.600',
-      mastercard: 'orange.600',
-      verve: 'green.600',
+      visa: '#2B6CB0', // blue.600
+      mastercard: '#C05621', // orange.600
+      verve: '#2F855A', // green.600
     };
-    return colors[brand.toLowerCase()] || 'purple.600';
+    return colors[brand.toLowerCase()] || '#805AD5';
+  };
+
+  const getCardBrandColorDark = (brand: string | undefined) => {
+    if (!brand) return '#6B46C1'; // purple.800
+
+    const colors: { [key: string]: string } = {
+      visa: '#2C5282', // blue.800
+      mastercard: '#9C4221', // orange.800
+      verve: '#276749', // green.800
+    };
+    return colors[brand.toLowerCase()] || '#6B46C1';
   };
 
   if (isLoading) {
@@ -353,85 +406,48 @@ export const CardsPage = () => {
         {cards.length > 0 ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             {cards.map((card: any) => (
-              <Card
-                key={card.id}
-                bg={`linear-gradient(135deg, ${getCardBrandColor(card.brand)} 0%, ${getCardBrandColor(card.brand).replace('600', '800')} 100%)`}
-                color="white"
+              <Box
+                key={card.card_id}
                 position="relative"
-                overflow="hidden"
-                transition="all 0.2s"
-                _hover={{ transform: 'translateY(-4px)', shadow: '2xl' }}
               >
-                {/* Card Background Pattern */}
                 <Box
-                  position="absolute"
-                  top="-50%"
-                  right="-20%"
-                  width="200px"
-                  height="200px"
-                  borderRadius="full"
-                  bg="whiteAlpha.100"
-                />
-                <Box
-                  position="absolute"
-                  bottom="-30%"
-                  left="-10%"
-                  width="150px"
-                  height="150px"
-                  borderRadius="full"
-                  bg="whiteAlpha.100"
-                />
+                  sx={{
+                    background: `linear-gradient(135deg, ${getCardBrandColor(card.card_brand)} 0%, ${getCardBrandColorDark(card.card_brand)} 100%)`,
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: 'lg',
+                    boxShadow: 'md',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '2xl',
+                    },
+                  }}
+                >
+                  {/* Card Background Pattern */}
+                  <Box
+                    position="absolute"
+                    top="-50%"
+                    right="-20%"
+                    width="200px"
+                    height="200px"
+                    borderRadius="full"
+                    bg="whiteAlpha.100"
+                    zIndex={0}
+                  />
+                  <Box
+                    position="absolute"
+                    bottom="-30%"
+                    left="-10%"
+                    width="150px"
+                    height="150px"
+                    borderRadius="full"
+                    bg="whiteAlpha.100"
+                    zIndex={0}
+                  />
 
-                {/* Card Menu */}
-                <Box position="absolute" top={2} right={2} zIndex={1}>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<Icon as={FiMoreVertical} />}
-                      variant="ghost"
-                      size="sm"
-                      color="white"
-                      _hover={{ bg: 'whiteAlpha.200' }}
-                    />
-                    <MenuList color="gray.800">
-                      <MenuItem icon={<Icon as={FiDollarSign} />} onClick={() => openFundModal(card)}>
-                        Fund Card
-                      </MenuItem>
-                      <MenuItem icon={<Icon as={FiShield} />} onClick={() => openControlsModal(card)}>
-                        Card Controls
-                      </MenuItem>
-                      <MenuItem icon={<Icon as={FiEye} />} onClick={() => openDetailsModal(card)}>
-                        View Details
-                      </MenuItem>
-                      <MenuItem
-                        icon={<Icon as={card.status === 'active' ? FiLock : FiUnlock} />}
-                        onClick={() => handleFreeze(card.id, card.status === 'active')}
-                      >
-                        {card.status === 'active' ? 'Freeze Card' : 'Unfreeze Card'}
-                      </MenuItem>
-                      <Divider />
-                      <MenuItem
-                        icon={<Icon as={FiShield} />}
-                        color="red.500"
-                        onClick={() => handleBlock(card.id)}
-                      >
-                        Block Card
-                      </MenuItem>
-                      <MenuItem
-                        icon={<Icon as={FiTrash2} />}
-                        color="red.500"
-                        onClick={() => {
-                          setDeleteCardId(card.id);
-                          onDeleteOpen();
-                        }}
-                      >
-                        Delete Card
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Box>
-
-                <CardBody position="relative" zIndex={1}>
+                  <Box position="relative" zIndex={1} p={6}>
                   <VStack align="stretch" spacing={4} h="full">
                     {/* Card Type & Brand */}
                     <HStack justify="space-between">
@@ -439,7 +455,7 @@ export const CardsPage = () => {
                         {card.card_type}
                       </Badge>
                       <Text fontSize="lg" fontWeight="bold" textTransform="uppercase">
-                        {card.brand}
+                        {card.card_brand}
                       </Text>
                     </HStack>
 
@@ -451,17 +467,17 @@ export const CardsPage = () => {
                         </Text>
                         <IconButton
                           aria-label="Toggle card number"
-                          icon={<Icon as={showCardNumber[card.id] ? FiEyeOff : FiEye} />}
+                          icon={<Icon as={showCardNumber[card.card_id] ? FiEyeOff : FiEye} />}
                           size="xs"
                           variant="ghost"
                           color="white"
-                          onClick={() => toggleCardNumber(card.id)}
+                          onClick={() => toggleCardNumber(card.card_id)}
                         />
                       </HStack>
                       <Text fontSize="lg" fontFamily="mono" letterSpacing="wide">
-                        {showCardNumber[card.id]
+                        {showCardNumber[card.card_id] && card.card_number
                           ? card.card_number.match(/.{1,4}/g)?.join(' ')
-                          : maskCardNumber(card.card_number)}
+                          : card.masked_number || '**** **** **** ****'}
                       </Text>
                     </Box>
 
@@ -472,7 +488,7 @@ export const CardsPage = () => {
                           Card Holder
                         </Text>
                         <Text fontSize="sm" fontWeight="600" textTransform="uppercase">
-                          {card.name_on_card}
+                          {card.card_holder_name}
                         </Text>
                       </Box>
                       <Box>
@@ -490,15 +506,15 @@ export const CardsPage = () => {
                           </Text>
                           <IconButton
                             aria-label="Toggle CVV"
-                            icon={<Icon as={showCvv[card.id] ? FiEyeOff : FiEye} />}
+                            icon={<Icon as={showCvv[card.card_id] ? FiEyeOff : FiEye} />}
                             size="xs"
                             variant="ghost"
                             color="white"
-                            onClick={() => toggleCvv(card.id)}
+                            onClick={() => toggleCvv(card.card_id)}
                           />
                         </HStack>
                         <Text fontSize="sm" fontWeight="600">
-                          {showCvv[card.id] ? card.cvv : '***'}
+                          {showCvv[card.card_id] && card.cvv ? card.cvv : '***'}
                         </Text>
                       </Box>
                     </HStack>
@@ -521,8 +537,71 @@ export const CardsPage = () => {
                       </Badge>
                     </HStack>
                   </VStack>
-                </CardBody>
-              </Card>
+                </Box>
+              </Box>
+
+                {/* Card Menu - Positioned outside overflow container */}
+                <Box position="absolute" top={2} right={2} zIndex={10}>
+                  <Menu placement="bottom-end">
+                    <MenuButton
+                      as={IconButton}
+                      icon={<Icon as={FiMoreVertical} />}
+                      variant="ghost"
+                      size="sm"
+                      color="white"
+                      _hover={{ bg: 'whiteAlpha.200' }}
+                    />
+                    <MenuList color="gray.800" zIndex={1500}>
+                      <MenuItem icon={<Icon as={FiDollarSign} />} onClick={() => openFundModal(card)}>
+                        Fund Card
+                      </MenuItem>
+                      <MenuItem icon={<Icon as={FiShield} />} onClick={() => openControlsModal(card)}>
+                        Card Controls
+                      </MenuItem>
+                      <MenuItem icon={<Icon as={FiEye} />} onClick={() => openDetailsModal(card)}>
+                        View Details
+                      </MenuItem>
+                      {card.status === 'inactive' && (
+                        <MenuItem
+                          icon={<Icon as={FiUnlock} />}
+                          onClick={() => handleActivate(card.card_id)}
+                          color="green.500"
+                        >
+                          Activate Card
+                        </MenuItem>
+                      )}
+                      {(card.status === 'active' || card.is_frozen) && (
+                        <MenuItem
+                          icon={<Icon as={card.is_frozen ? FiUnlock : FiLock} />}
+                          onClick={() => handleFreeze(card.card_id, !card.is_frozen)}
+                        >
+                          {card.is_frozen ? 'Unfreeze Card' : 'Freeze Card'}
+                        </MenuItem>
+                      )}
+                      <Divider />
+                      {card.status !== 'blocked' && (
+                        <MenuItem
+                          icon={<Icon as={FiShield} />}
+                          color="red.500"
+                          onClick={() => handleBlock(card.card_id)}
+                        >
+                          Block Card Permanently
+                        </MenuItem>
+                      )}
+                      <MenuItem
+                        icon={<Icon as={FiTrash2} />}
+                        color="red.500"
+                        onClick={() => {
+                          setDeleteCardId(card.card_id);
+                          onDeleteOpen();
+                        }}
+                      >
+                        Delete Card
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </Box>
+              </Box>
             ))}
           </SimpleGrid>
         ) : (
@@ -549,8 +628,19 @@ export const CardsPage = () => {
                   <FormLabel>Select Wallet</FormLabel>
                   <Select {...createForm.register('wallet_id')} placeholder="Choose wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Currency</FormLabel>
+                  <Select {...createForm.register('currency_code')} placeholder="Select currency">
+                    {currencies.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.name} ({currency.code})
                       </option>
                     ))}
                   </Select>
@@ -566,19 +656,18 @@ export const CardsPage = () => {
 
                 <FormControl isRequired>
                   <FormLabel>Card Brand</FormLabel>
-                  <Select {...createForm.register('brand')} placeholder="Select brand">
+                  <Select {...createForm.register('card_brand')} placeholder="Select brand">
                     <option value="visa">Visa</option>
                     <option value="mastercard">Mastercard</option>
                     <option value="verve">Verve</option>
                   </Select>
                 </FormControl>
 
-                <FormControl isRequired>
-                  <FormLabel>Name on Card</FormLabel>
+                <FormControl>
+                  <FormLabel>Card Nickname (Optional)</FormLabel>
                   <Input
-                    {...createForm.register('name_on_card')}
-                    placeholder="Enter name as it should appear on card"
-                    textTransform="uppercase"
+                    {...createForm.register('nickname')}
+                    placeholder="e.g., Netflix Card"
                   />
                 </FormControl>
               </VStack>
@@ -656,9 +745,9 @@ export const CardsPage = () => {
                   </Box>
                 </HStack>
                 <Switch
-                  isChecked={selectedCard?.international_enabled}
+                  isChecked={selectedCard?.allow_international_transactions}
                   onChange={(e) =>
-                    handleControlToggle(selectedCard?.id, 'international_enabled', e.target.checked)
+                    handleControlToggle(selectedCard, 'allow_international_transactions', e.target.checked)
                   }
                 />
               </HStack>
@@ -676,9 +765,9 @@ export const CardsPage = () => {
                   </Box>
                 </HStack>
                 <Switch
-                  isChecked={selectedCard?.online_enabled}
+                  isChecked={selectedCard?.allow_online_transactions}
                   onChange={(e) =>
-                    handleControlToggle(selectedCard?.id, 'online_enabled', e.target.checked)
+                    handleControlToggle(selectedCard, 'allow_online_transactions', e.target.checked)
                   }
                 />
               </HStack>
@@ -696,9 +785,9 @@ export const CardsPage = () => {
                   </Box>
                 </HStack>
                 <Switch
-                  isChecked={selectedCard?.atm_enabled}
+                  isChecked={selectedCard?.allow_atm_withdrawals}
                   onChange={(e) =>
-                    handleControlToggle(selectedCard?.id, 'atm_enabled', e.target.checked)
+                    handleControlToggle(selectedCard, 'allow_atm_withdrawals', e.target.checked)
                   }
                 />
               </HStack>
@@ -755,10 +844,14 @@ const CardTransactions = ({ cardId }: { cardId: string }) => {
     { skip: !cardId }
   );
 
-  const transactions = data?.data?.data || [];
+  const transactions = data?.data || [];
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <Box textAlign="center" py={8}>
+        <Text color="gray.500">Loading transactions...</Text>
+      </Box>
+    );
   }
 
   if (transactions.length === 0) {

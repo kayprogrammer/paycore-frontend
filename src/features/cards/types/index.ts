@@ -1,26 +1,30 @@
 import { CardStatus, Currency } from '@/types/common';
 
 export interface Card {
-  id: string;
+  card_id: string;
   user_id: string;
   wallet_id: string;
   card_type: 'virtual' | 'physical';
   card_brand: 'visa' | 'mastercard' | 'verve';
-  masked_card_number: string;
-  card_name: string;
-  nickname: string | null;
-  expiry_date: string;
-  cvv: string;
-  balance: number;
-  currency: Currency;
+  card_number?: string; // Only available on create or detail view
+  masked_number?: string; // Available in list view
+  card_holder_name: string;
+  expiry_month: number;
+  expiry_year: number;
+  cvv?: string; // Only available on create
+  balance?: number;
+  currency?: string;
   status: CardStatus;
-  daily_limit: number;
-  monthly_limit: number;
-  billing_address: BillingAddress | null;
-  controls: CardControls;
-  provider: string;
+  spending_limit: number | null;
+  daily_limit: number | null;
+  monthly_limit: number | null;
+  is_frozen: boolean;
+  allow_online_transactions: boolean;
+  allow_atm_withdrawals: boolean;
+  allow_international_transactions: boolean;
+  total_spent?: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface BillingAddress {

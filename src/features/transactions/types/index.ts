@@ -36,7 +36,9 @@ export interface TransferRequest {
   to_wallet_id: string;
   amount: number;
   description?: string;
-  pin: string;
+  pin?: string;
+  biometric_token?: string;
+  device_id?: string;
 }
 
 export interface TransferResponse {
@@ -103,10 +105,13 @@ export interface Bank {
 
 export interface TransactionStatistics {
   total_transactions: number;
-  total_amount: number;
-  total_fees: number;
-  by_type: Record<TransactionType, number>;
-  by_status: Record<TransactionStatus, number>;
+  total_sent: string;
+  total_received: string;
+  total_fees: string;
+  successful_count: number;
+  failed_count: number;
+  pending_count: number;
+  average_transaction_amount: string;
 }
 
 export interface Dispute {
@@ -123,8 +128,8 @@ export interface Dispute {
 }
 
 export interface CreateDisputeRequest {
-  transaction_id: string;
-  type: 'unauthorized' | 'fraud' | 'not_received' | 'duplicate' | 'incorrect_amount';
+  dispute_type: 'unauthorized' | 'duplicate' | 'not_received' | 'defective' | 'refund_not_processed' | 'other';
   reason: string;
-  evidence?: string;
+  disputed_amount?: number;
+  evidence?: any;
 }

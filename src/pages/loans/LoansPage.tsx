@@ -86,8 +86,14 @@ interface LoanApplicationForm {
   product_id: string;
   amount: number;
   tenure_months: number;
+  repayment_frequency: string;
   purpose: string;
   wallet_id: string;
+  collateral_type?: string;
+  collateral_value?: number;
+  guarantor_name?: string;
+  guarantor_phone?: string;
+  guarantor_email?: string;
 }
 
 interface RepaymentForm {
@@ -111,6 +117,7 @@ export const LoansPage = () => {
   const [calculatedLoan, setCalculatedLoan] = useState<any>(null);
   const [loanAmount, setLoanAmount] = useState(10000);
   const [loanTenure, setLoanTenure] = useState(3);
+  const [repaymentFrequency, setRepaymentFrequency] = useState<string>('monthly');
 
   // Modals
   const { isOpen: isApplyOpen, onOpen: onApplyOpen, onClose: onApplyClose } = useDisclosure();
@@ -148,15 +155,36 @@ export const LoansPage = () => {
 
     try {
       const result = await calculateLoan({
-        product_id: selectedProduct.id,
+        product_id: selectedProduct.product_id || selectedProduct.id,
         amount: loanAmount,
         tenure_months: loanTenure,
+        repayment_frequency: repaymentFrequency,
       }).unwrap();
       setCalculatedLoan(result.data);
+      toast({
+        title: 'Calculation complete',
+        description: 'Loan details calculated successfully',
+        status: 'success',
+        duration: 3000,
+      });
     } catch (error: any) {
+      // Handle validation errors
+      let errorMessage = error.data?.message || 'An error occurred';
+
+      if (error.data?.data && typeof error.data.data === 'object') {
+        // Format validation errors
+        const validationErrors = Object.entries(error.data.data)
+          .map(([field, msgs]: [string, any]) => {
+            const messages = Array.isArray(msgs) ? msgs : [msgs];
+            return `${field}: ${messages.join(', ')}`;
+          })
+          .join('\n');
+        errorMessage = validationErrors || errorMessage;
+      }
+
       toast({
         title: 'Calculation failed',
-        description: error.data?.message || 'An error occurred',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
       });
@@ -166,9 +194,18 @@ export const LoansPage = () => {
   const handleApply = async (data: LoanApplicationForm) => {
     try {
       await createApplication({
-        ...data,
-        amount: Number(data.amount),
-      }).unwrap();
+        loan_product_id: data.product_id,
+        wallet_id: data.wallet_id,
+        requested_amount: Number(data.amount),
+        tenure_months: Number(data.tenure_months),
+        repayment_frequency: data.repayment_frequency as any,
+        purpose: data.purpose,
+        collateral_type: data.collateral_type || 'none',
+        collateral_value: Number(data.collateral_value) || 0,
+        guarantor_name: data.guarantor_name || '',
+        guarantor_phone: data.guarantor_phone || '',
+        guarantor_email: data.guarantor_email || '',
+      } as any).unwrap();
       toast({
         title: 'Application submitted',
         description: 'Your loan application is being reviewed',
@@ -179,9 +216,21 @@ export const LoansPage = () => {
       applyForm.reset();
       setSelectedProduct(null);
     } catch (error: any) {
+      let errorMessage = error.data?.message || 'An error occurred';
+
+      if (error.data?.data && typeof error.data.data === 'object') {
+        const validationErrors = Object.entries(error.data.data)
+          .map(([field, msgs]: [string, any]) => {
+            const messages = Array.isArray(msgs) ? msgs : [msgs];
+            return `${field}: ${messages.join(', ')}`;
+          })
+          .join('\n');
+        errorMessage = validationErrors || errorMessage;
+      }
+
       toast({
         title: 'Application failed',
-        description: error.data?.message || 'An error occurred',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
       });
@@ -236,15 +285,22 @@ export const LoansPage = () => {
 
   const openApplyModal = (product: any) => {
     setSelectedProduct(product);
-    applyForm.setValue('product_id', product.id);
-    applyForm.setValue('tenure_months', product.min_tenure_months);
+    applyForm.setValue('product_id', product.product_id || product.id);
+    applyForm.setValue('amount', Number(product.min_amount) || 0);
+    applyForm.setValue('tenure_months', Number(product.min_tenure_months) || 1);
+    applyForm.setValue('repayment_frequency', 'monthly');
+    applyForm.setValue('collateral_type', 'savings');
+    applyForm.setValue('collateral_value', Number(product.min_amount) || 1000);
+    applyForm.setValue('guarantor_name', '');
+    applyForm.setValue('guarantor_phone', '');
+    applyForm.setValue('guarantor_email', '');
     onApplyOpen();
   };
 
   const openCalculatorModal = (product: any) => {
     setSelectedProduct(product);
-    setLoanAmount(product.min_amount);
-    setLoanTenure(product.min_tenure_months);
+    setLoanAmount(Number(product.min_amount) || 10000);
+    setLoanTenure(Number(product.min_tenure_months) || 1);
     setCalculatedLoan(null);
     onCalculatorOpen();
   };
@@ -564,33 +620,59 @@ export const LoansPage = () => {
               <FormControl>
                 <FormLabel>Loan Amount: {formatCurrency(loanAmount, 'NGN')}</FormLabel>
                 <Slider
+                  aria-label="loan-amount-slider"
                   value={loanAmount}
-                  onChange={setLoanAmount}
-                  min={selectedProduct?.min_amount || 1000}
-                  max={selectedProduct?.max_amount || 100000}
+                  onChange={(val) => setLoanAmount(val)}
+                  min={Number(selectedProduct?.min_amount) || 1000}
+                  max={Number(selectedProduct?.max_amount) || 1000000}
                   step={1000}
+                  focusThumbOnChange={false}
+                  colorScheme="brand"
                 >
                   <SliderTrack>
-                    <SliderFilledTrack bg="brand.500" />
+                    <SliderFilledTrack />
                   </SliderTrack>
-                  <SliderThumb boxSize={6} />
+                  <SliderThumb />
                 </Slider>
+                <HStack justify="space-between" mt={2}>
+                  <Text fontSize="xs" color="gray.600">
+                    {formatCurrency(Number(selectedProduct?.min_amount) || 1000, 'NGN')}
+                  </Text>
+                  <Text fontSize="xs" color="gray.600">
+                    {formatCurrency(Number(selectedProduct?.max_amount) || 1000000, 'NGN')}
+                  </Text>
+                </HStack>
               </FormControl>
 
               <FormControl>
                 <FormLabel>Tenure: {loanTenure} months</FormLabel>
                 <Slider
+                  aria-label="loan-tenure-slider"
                   value={loanTenure}
                   onChange={setLoanTenure}
-                  min={selectedProduct?.min_tenure_months || 1}
-                  max={selectedProduct?.max_tenure_months || 12}
+                  min={Number(selectedProduct?.min_tenure_months) || 1}
+                  max={Number(selectedProduct?.max_tenure_months) || 12}
                   step={1}
+                  colorScheme="brand"
                 >
                   <SliderTrack>
-                    <SliderFilledTrack bg="brand.500" />
+                    <SliderFilledTrack />
                   </SliderTrack>
-                  <SliderThumb boxSize={6} />
+                  <SliderThumb />
                 </Slider>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Repayment Frequency</FormLabel>
+                <Select
+                  value={repaymentFrequency}
+                  onChange={(e) => setRepaymentFrequency(e.target.value)}
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="bi_weekly">Bi-Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                </Select>
               </FormControl>
 
               <Button onClick={handleCalculate} isLoading={calculating} colorScheme="brand">
@@ -605,7 +687,7 @@ export const LoansPage = () => {
                       <HStack justify="space-between">
                         <Text color="gray.600">Principal</Text>
                         <Text fontWeight="600">
-                          {formatCurrency(calculatedLoan.principal, 'NGN')}
+                          {formatCurrency(calculatedLoan.requested_amount || calculatedLoan.approved_amount, 'NGN')}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
@@ -618,13 +700,13 @@ export const LoansPage = () => {
                       <HStack justify="space-between">
                         <Text fontWeight="600">Total Repayment</Text>
                         <Text fontWeight="bold" fontSize="lg" color="brand.600">
-                          {formatCurrency(calculatedLoan.total_repayment, 'NGN')}
+                          {formatCurrency(calculatedLoan.total_repayable, 'NGN')}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text fontWeight="600">Monthly Payment</Text>
                         <Text fontWeight="bold" fontSize="lg">
-                          {formatCurrency(calculatedLoan.monthly_payment, 'NGN')}
+                          {formatCurrency(calculatedLoan.monthly_repayment || calculatedLoan.installment_amount, 'NGN')}
                         </Text>
                       </HStack>
                     </VStack>
@@ -691,6 +773,76 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
+                  <FormLabel>Repayment Frequency</FormLabel>
+                  <Select {...applyForm.register('repayment_frequency')} placeholder="Select frequency">
+                    <option value="weekly">Weekly</option>
+                    <option value="bi_weekly">Bi-Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Collateral Type</FormLabel>
+                  <Select {...applyForm.register('collateral_type')} placeholder="Select collateral">
+                    <option value="none">No Collateral</option>
+                    <option value="property">Property</option>
+                    <option value="vehicle">Vehicle</option>
+                    <option value="savings">Savings Account</option>
+                    <option value="investment">Investment Portfolio</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Collateral Value</FormLabel>
+                  <NumberInput min={0}>
+                    <NumberInputField
+                      {...applyForm.register('collateral_value', { valueAsNumber: true })}
+                      placeholder="Enter collateral value"
+                    />
+                  </NumberInput>
+                  <Text fontSize="xs" color="gray.600" mt={1}>
+                    Estimated value of collateral (set to 0 if no collateral)
+                  </Text>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Guarantor Name</FormLabel>
+                  <Input
+                    {...applyForm.register('guarantor_name')}
+                    placeholder="Enter guarantor's full name"
+                  />
+                  <Text fontSize="xs" color="gray.600" mt={1}>
+                    Full name of your loan guarantor
+                  </Text>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Guarantor Phone</FormLabel>
+                  <Input
+                    {...applyForm.register('guarantor_phone')}
+                    placeholder="Enter guarantor's phone number"
+                    type="tel"
+                  />
+                  <Text fontSize="xs" color="gray.600" mt={1}>
+                    Valid phone number of your guarantor
+                  </Text>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Guarantor Email</FormLabel>
+                  <Input
+                    {...applyForm.register('guarantor_email')}
+                    placeholder="Enter guarantor's email address"
+                    type="email"
+                  />
+                  <Text fontSize="xs" color="gray.600" mt={1}>
+                    Valid email address of your guarantor
+                  </Text>
+                </FormControl>
+
+                <FormControl isRequired>
                   <FormLabel>Purpose</FormLabel>
                   <Select {...applyForm.register('purpose')} placeholder="Select purpose">
                     <option value="business">Business</option>
@@ -706,8 +858,8 @@ export const LoansPage = () => {
                   <FormLabel>Disbursement Wallet</FormLabel>
                   <Select {...applyForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} ({wallet.currency})
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
                       </option>
                     ))}
                   </Select>
@@ -742,13 +894,13 @@ export const LoansPage = () => {
                         <HStack justify="space-between">
                           <Text color="gray.600">Outstanding Balance</Text>
                           <Text fontWeight="bold" color="red.600">
-                            {formatCurrency(selectedLoan.outstanding_balance, selectedLoan.currency)}
+                            {formatCurrency(selectedLoan.outstanding_balance, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
                         <HStack justify="space-between">
                           <Text color="gray.600">Next Payment Due</Text>
                           <Text fontWeight="600">
-                            {formatCurrency(selectedLoan.monthly_payment, selectedLoan.currency)}
+                            {formatCurrency(selectedLoan.monthly_payment, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
                       </VStack>
@@ -770,8 +922,8 @@ export const LoansPage = () => {
                   <FormLabel>Payment Wallet</FormLabel>
                   <Select {...repayForm.register('wallet_id')} placeholder="Select wallet">
                     {wallets.map((wallet: any) => (
-                      <option key={wallet.id} value={wallet.id}>
-                        {wallet.name} - {formatCurrency(wallet.balance, wallet.currency)}
+                      <option key={wallet.wallet_id} value={wallet.wallet_id}>
+                        {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
                       </option>
                     ))}
                   </Select>
@@ -847,7 +999,7 @@ const RepaymentSchedule = ({ loanId }: { loanId: string }) => {
             <Td>{index + 1}</Td>
             <Td>{formatDate(item.due_date)}</Td>
             <Td isNumeric fontWeight="600">
-              {formatCurrency(item.amount, item.currency)}
+              {formatCurrency(item.amount, item.currency?.code || 'NGN')}
             </Td>
             <Td>
               <Badge colorScheme={getStatusColor(item.status)}>{item.status}</Badge>
