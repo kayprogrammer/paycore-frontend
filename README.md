@@ -14,10 +14,10 @@ A comprehensive, production-ready fintech platform frontend built with React, Ty
 ## 📸 Screenshots
 
 ### Login Page (Google OAuth)
-![PayCore Login Page](public/display1.png)
+![PayCore Login Page](public/display1.png?v=2)
 
 ### Dashboard
-![PayCore Dashboard](public/display2.png)
+![PayCore Dashboard](public/display2.png?v=2)
 
 ## 🚀 Features
 
