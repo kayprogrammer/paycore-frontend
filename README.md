@@ -24,12 +24,11 @@ PayCore is a complete financial services platform that consumes **137 API endpoi
 - ⚙️ **Settings** - Security, notifications, devices, and account management
 
 ### Authentication & Security
-- 📧 Email/Password authentication with MFA (OTP)
-- 🔐 Biometric authentication (fingerprint, Face ID)
-- 🌐 Google OAuth integration
-- 🔄 JWT token management with auto-refresh
-- 📱 Multi-device support
-- 🛡️ PIN-based transaction authorization
+- 🌐 **Google OAuth** - Primary authentication method (Sign in with Google)
+- 📧 **Email/OTP** - Alternative authentication with OTP verification
+- 🔄 **JWT Token Management** - Auto-refresh with secure storage
+- 📱 **Multi-device Support** - Session management across devices
+- 🛡️ **PIN-based Authorization** - Transaction security with wallet PINs
 
 ## 🏗️ Architecture
 
@@ -150,8 +149,7 @@ Edit `.env.development`:
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_APP_NAME=PayCore
-VITE_ENABLE_BIOMETRIC_AUTH=true
-VITE_ENABLE_OAUTH=true
+VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id
 ```
 
 4. **Start development server**
@@ -287,17 +285,28 @@ brand: {
 
 ## 🔐 Authentication Flow
 
-1. **Login** → Enter email/password → OTP sent to email
+### Primary Authentication (Google OAuth)
+
+1. **Click "Sign in with Google"** → Google OAuth popup
+2. **Authorize** → Select Google account
+3. **Token Exchange** → Google ID token sent to backend
+4. **Profile Fetch** → User profile and tokens received
+5. **Auto-Login** → Redirect to dashboard
+
+### Alternative Authentication (Email/OTP)
+
+1. **Login** → Enter email → OTP sent to email
 2. **Verify OTP** → Enter 6-digit code → Tokens received
 3. **Token Storage** → Access & refresh tokens stored in Redux + localStorage
 4. **Auto-Refresh** → Expired tokens automatically refreshed
 5. **Protected Routes** → Redirect to login if not authenticated
 
-### Biometric Flow
+### Key Features
 
-1. **Setup** → Device registration with trust token
-2. **Login** → Use trust token instead of password
-3. **Verification** → Backend validates device and token
+- **Single Source of Truth** → Profile data fetched directly from API endpoint
+- **RTK Query Caching** → Automatic cache management and invalidation
+- **Real-time Updates** → Avatar and profile changes reflect immediately
+- **Redux Persistence** → Auth state persists across page reloads
 
 ## 📊 State Management
 
@@ -350,9 +359,9 @@ function WalletsPage() {
 ## 🌐 Pages Overview
 
 ### Authentication Pages
-- **LoginPage** - Email/password login with OTP
-- **RegisterPage** - User registration with password strength
-- **VerifyOTPPage** - 6-digit OTP verification
+- **LoginPage** - Google OAuth sign-in (primary method)
+- **RegisterPage** - Google OAuth sign-up (primary method)
+- **VerifyOTPPage** - 6-digit OTP verification (alternative method)
 - **ForgotPasswordPage** - Multi-step password reset
 
 ### Main Application Pages
@@ -418,14 +427,15 @@ Charts implemented using Recharts:
 
 ## 🔒 Security Features
 
-- ✅ JWT tokens with auto-refresh
-- ✅ Secure token storage
-- ✅ PIN-based transaction authorization
-- ✅ Masked sensitive data (card numbers, etc.)
-- ✅ Input validation and sanitization
-- ✅ Protected routes
-- ✅ Multi-factor authentication (OTP)
-- ✅ Biometric authentication support
+- ✅ **Google OAuth Integration** - Secure third-party authentication
+- ✅ **JWT Tokens** - Auto-refresh mechanism for seamless sessions
+- ✅ **Secure Token Storage** - Redux Persist with localStorage
+- ✅ **PIN Authorization** - Transaction-level security
+- ✅ **Data Masking** - Sensitive data (card numbers, etc.)
+- ✅ **Input Validation** - Client-side form validation
+- ✅ **Protected Routes** - Authentication guards
+- ✅ **Multi-factor Authentication** - OTP verification
+- ✅ **Profile Security** - Avatar upload, password management removed (Google-only auth)
 
 ## 🐳 Docker Deployment
 
@@ -589,19 +599,19 @@ The production Docker image uses Nginx with:
 
 ## 🎯 Quick Start Guide
 
-### Test Credentials
+### Authentication Methods
 
-Use these credentials to test the application:
+**Primary Method: Google OAuth**
+- Click "Sign in with Google" button
+- Authorize with your Google account
+- Instant access to dashboard
 
-**Test Account 1 (Regular User with KYC):**
-- Email: `test@example.com`
-- Password: `password123`
-- Features: Has NGN wallet with ₦100,000 balance
+**Alternative Method: Email/OTP**
+- Enter your email address
+- Receive 6-digit OTP via email
+- Verify OTP to access dashboard
 
-**Test Account 2 (Staff User with KYC):**
-- Email: `test2@example.com`
-- Password: `password123`
-- Features: Staff access + NGN wallet with ₦100,000 balance
+**Note**: Password-based authentication and change password functionality have been removed in favor of Google OAuth for enhanced security.
 
 ### Quick Navigation
 
