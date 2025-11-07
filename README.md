@@ -4,10 +4,20 @@ A comprehensive, production-ready fintech platform frontend built with React, Ty
 
 > **⚠️ Important Notice**: The live backend server will be discontinued on **February 14th, 2026** due to hosting costs. This is a demonstration project. The frontend will gracefully display a friendly error message when the server becomes unreachable. You can run both projects locally following the setup instructions.
 
+> **📊 Performance Note**: The live URL may experience slower response times. This is **not** due to the application or implementation itself, but rather the hosting service configuration. The free/basic tier uses limited RAM and server resources. For optimal performance, please run the project locally using the setup instructions below.
+
 ## 🔗 Related Projects
 
 - **Backend API**: [kayprogrammer/paycore-api-1](https://github.com/kayprogrammer/paycore-api-1)
 - **Live Demo**: [https://paycore-fe.netlify.app](https://paycore-fe.netlify.app)
+
+## 📸 Screenshots
+
+### Login Page (Google OAuth)
+![PayCore Login Page](public/display1.png)
+
+### Dashboard
+![PayCore Dashboard](public/display2.png)
 
 ## 🚀 Features
 
