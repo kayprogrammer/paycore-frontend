@@ -105,9 +105,10 @@ src/
 ## 📦 Installation & Setup
 
 ### Prerequisites
-- **Node.js 18+** and npm (for local development)
+- **Node.js 20.19+ or 22.12+** and npm (for local development, required by Vite 7.x)
 - **Docker & Docker Compose** (for containerized deployment)
 - **Backend API** running (Django PayCore API)
+- **Google OAuth Client ID** (for authentication)
 
 ### Option 1: Quick Start with Makefile (Recommended)
 
@@ -459,7 +460,7 @@ make docker-stop
 ### Docker Images
 
 **Production Image (Multi-stage build):**
-- Based on `node:18-alpine` (builder) + `nginx:alpine` (runtime)
+- Based on `node:20-alpine` (builder) + `nginx:alpine` (runtime)
 - Optimized for production with minimal size
 - Includes Nginx for serving static files
 - Health checks configured
@@ -467,10 +468,11 @@ make docker-stop
 - Gzip compression enabled
 
 **Development Image:**
-- Based on `node:18-alpine`
-- Hot reload enabled
+- Based on `node:20-alpine`
+- Hot reload enabled with Vite HMR
 - Volume mounting for live code updates
 - Full development tooling
+- Accessible at http://localhost:3000
 
 ### Docker Compose
 
@@ -491,8 +493,18 @@ Set in `docker-compose.yml` or via command line:
 ```bash
 docker build \
   --build-arg VITE_API_BASE_URL=https://api.paycore.com/api/v1 \
+  --build-arg VITE_GOOGLE_CLIENT_ID=your_google_client_id \
   -t paycore-frontend:latest .
 ```
+
+**Required Environment Variables:**
+- `VITE_API_BASE_URL` - Backend API URL
+- `VITE_GOOGLE_CLIENT_ID` - Google OAuth Client ID
+- `VITE_APP_NAME` - Application name (default: PayCore)
+
+**Port Configuration:**
+- **Development**: Container port 5173 → Host port 3000
+- **Production**: Container port 80 → Host port (configurable in docker-compose.yml)
 
 ### Container Management
 

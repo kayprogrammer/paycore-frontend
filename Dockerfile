@@ -1,7 +1,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && \
+# Install all dependencies (including devDependencies needed for build)
+RUN npm ci && \
     npm cache clean --force
 
 # Copy source code
@@ -19,14 +19,12 @@ COPY . .
 # Build arguments for environment variables
 ARG VITE_API_BASE_URL
 ARG VITE_APP_NAME=PayCore
-ARG VITE_ENABLE_BIOMETRIC_AUTH=true
-ARG VITE_ENABLE_OAUTH=true
+ARG VITE_GOOGLE_CLIENT_ID
 
 # Set environment variables
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_APP_NAME=${VITE_APP_NAME}
-ENV VITE_ENABLE_BIOMETRIC_AUTH=${VITE_ENABLE_BIOMETRIC_AUTH}
-ENV VITE_ENABLE_OAUTH=${VITE_ENABLE_OAUTH}
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 
 # Build the application
 RUN npm run build
