@@ -12,8 +12,7 @@ import {
   FiMessageCircle,
   FiSettings,
 } from 'react-icons/fi';
-import { useAppSelector } from '@/hooks';
-import { selectCurrentUser } from '@/store/slices/authSlice';
+import { useGetProfileQuery } from '@/features/profile/services/profileApi';
 
 interface NavItem {
   label: string;
@@ -37,7 +36,10 @@ const navItems: NavItem[] = [
 
 export const Sidebar = () => {
   const location = useLocation();
-  const user = useAppSelector(selectCurrentUser);
+
+  // Fetch profile data
+  const { data: profileData } = useGetProfileQuery();
+  const profile = profileData?.data;
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
@@ -104,8 +106,8 @@ export const Sidebar = () => {
             <Flex align="center" cursor="pointer" _hover={{ opacity: 0.8 }}>
               <Avatar
                 size="sm"
-                name={`${user?.first_name} ${user?.last_name}`}
-                src={user?.avatar || undefined}
+                name={`${profile?.first_name} ${profile?.last_name}`}
+                src={profile?.avatar_url || undefined}
                 bg="brand.500"
                 color="white"
                 fontWeight="bold"
@@ -113,10 +115,10 @@ export const Sidebar = () => {
               />
               <Box>
                 <Text fontSize="sm" fontWeight="600">
-                  {user?.first_name} {user?.last_name}
+                  {profile?.first_name} {profile?.last_name}
                 </Text>
                 <Text fontSize="xs" color="gray.500">
-                  {user?.email}
+                  {profile?.email}
                 </Text>
               </Box>
             </Flex>

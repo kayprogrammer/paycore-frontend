@@ -15,14 +15,12 @@ import {
   AlertIcon,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { useVerifyOTPMutation, useLoginMutation } from '@/features/auth/services/authApi';
+import { useVerifyOTPMutation } from '@/features/auth/services/authApi';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/store/slices/authSlice';
 
 export const VerifyOTPPage = () => {
   const [otp, setOtp] = useState('');
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
@@ -31,17 +29,6 @@ export const VerifyOTPPage = () => {
   const email = location.state?.email;
 
   const [verifyOTP, { isLoading }] = useVerifyOTPMutation();
-  const [resendOTP, { isLoading: isResending }] = useLoginMutation();
-
-  // Countdown timer for resend
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
-    }
-  }, [countdown]);
 
   // Redirect if no email provided
   useEffect(() => {
@@ -123,38 +110,6 @@ export const VerifyOTPPage = () => {
     }
   };
 
-  const handleResendOTP = async () => {
-    if (!canResend || !email) return;
-
-    try {
-      const response = await resendOTP({
-        email: email,
-        password: '', // Password not needed for resend
-      }).unwrap();
-
-      toast({
-        title: 'OTP resent',
-        description: response.message || 'A new OTP has been sent to your email',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-
-      // Reset countdown
-      setCountdown(60);
-      setCanResend(false);
-      setOtp('');
-    } catch (error: any) {
-      toast({
-        title: 'Failed to resend OTP',
-        description: error?.data?.message || 'Please try again later',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
   if (!email) {
     return null;
   }
@@ -218,33 +173,6 @@ export const VerifyOTPPage = () => {
         >
           Verify OTP
         </Button>
-
-        {/* Resend OTP */}
-        <VStack spacing={2}>
-          <Text fontSize="sm" color="gray.600">
-            Didn't receive the code?
-          </Text>
-          {canResend ? (
-            <Button
-              variant="link"
-              colorScheme="brand"
-              size="sm"
-              fontWeight="semibold"
-              onClick={handleResendOTP}
-              isLoading={isResending}
-              loadingText="Sending..."
-            >
-              Resend OTP
-            </Button>
-          ) : (
-            <Text fontSize="sm" color="gray.500">
-              Resend OTP in{' '}
-              <Text as="span" fontWeight="semibold" color="brand.500">
-                {countdown}s
-              </Text>
-            </Text>
-          )}
-        </VStack>
 
         {/* Security Notice */}
         <Alert status="info" borderRadius="md" variant="left-accent">

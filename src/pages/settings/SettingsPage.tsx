@@ -17,18 +17,6 @@ import {
   Tab,
   TabPanel,
   Divider,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  FormErrorMessage,
   Badge,
   Table,
   Thead,
@@ -41,25 +29,13 @@ import {
   FiShield,
   FiBell,
   FiMonitor,
-  FiKey,
   FiLock,
   FiMail,
   FiSmartphone,
 } from 'react-icons/fi';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import {
-  useChangePasswordMutation,
-  useLogoutMutation,
-} from '@/features/auth/services/authApi';
+import { useLogoutMutation } from '@/features/auth/services/authApi';
 import { formatRelativeTime } from '@/utils/formatters';
-import { handleApiError } from '@/utils/formErrorHandler';
-
-interface PasswordForm {
-  old_password: string;
-  new_password: string;
-  confirm_password: string;
-}
 
 export const SettingsPage = () => {
   const toast = useToast();
@@ -67,19 +43,8 @@ export const SettingsPage = () => {
   // State
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [transactionAlerts, setTransactionAlerts] = useState(true);
-  const [loginAlerts, setLoginAlerts] = useState(true);
-  const [marketingEmails, setMarketingEmails] = useState(false);
-
-  // Modals
-  const { isOpen: isPasswordOpen, onOpen: onPasswordOpen, onClose: onPasswordClose } = useDisclosure();
-
-  // Forms
-  const passwordForm = useForm<PasswordForm>();
 
   // API
-  const [changePassword, { isLoading: changingPassword }] = useChangePasswordMutation();
   const [logout] = useLogoutMutation();
 
   // Mock data for devices
@@ -101,37 +66,6 @@ export const SettingsPage = () => {
   ];
 
   // Handlers
-  const handlePasswordChange = async (data: PasswordForm) => {
-    if (data.new_password !== data.confirm_password) {
-      toast({
-        title: 'Passwords do not match',
-        status: 'error',
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      await changePassword({
-        old_password: data.old_password,
-        new_password: data.new_password,
-      }).unwrap();
-      toast({
-        title: 'Password changed successfully',
-        status: 'success',
-        duration: 3000,
-      });
-      onPasswordClose();
-      passwordForm.reset();
-    } catch (error: any) {
-      handleApiError(error, passwordForm.setError, toast);
-    }
-  };
-
-  // 2FA functionality removed - not available in current auth API
-  // const handleToggle2FA = async (enable: boolean) => { ... }
-  // const handleEnable2FA = async (data: TwoFactorForm) => { ... }
-
   const handleLogoutDevice = async (deviceId: string) => {
     try {
       // Call logout device API
@@ -174,28 +108,6 @@ export const SettingsPage = () => {
                 <Card>
                   <CardBody>
                     <VStack align="stretch" spacing={6}>
-                      {/* Change Password */}
-                      <HStack justify="space-between">
-                        <HStack>
-                          <Icon as={FiKey} boxSize={5} color="brand.500" />
-                          <Box>
-                            <Text fontWeight="600">Password</Text>
-                            <Text fontSize="sm" color="gray.600">
-                              Change your account password
-                            </Text>
-                          </Box>
-                        </HStack>
-                        <Button size="sm" onClick={onPasswordOpen}>
-                          Change
-                        </Button>
-                      </HStack>
-
-                      <Divider />
-
-                      {/* Two-Factor Authentication - Removed (not available in auth API) */}
-
-                      <Divider />
-
                       {/* Session Management */}
                       <HStack justify="space-between">
                         <HStack>
@@ -246,66 +158,6 @@ export const SettingsPage = () => {
                               colorScheme="brand"
                               isChecked={pushNotifications}
                               onChange={(e) => setPushNotifications(e.target.checked)}
-                            />
-                          </HStack>
-                          <HStack justify="space-between">
-                            <HStack>
-                              <Icon as={FiSmartphone} color="gray.500" />
-                              <Text>SMS Notifications</Text>
-                            </HStack>
-                            <Switch
-                              colorScheme="brand"
-                              isChecked={smsNotifications}
-                              onChange={(e) => setSmsNotifications(e.target.checked)}
-                            />
-                          </HStack>
-                        </VStack>
-                      </Box>
-
-                      <Divider />
-
-                      <Box>
-                        <Heading size="sm" mb={4}>
-                          Notification Preferences
-                        </Heading>
-                        <VStack align="stretch" spacing={4}>
-                          <HStack justify="space-between">
-                            <Box>
-                              <Text fontWeight="500">Transaction Alerts</Text>
-                              <Text fontSize="sm" color="gray.600">
-                                Get notified for all transactions
-                              </Text>
-                            </Box>
-                            <Switch
-                              colorScheme="brand"
-                              isChecked={transactionAlerts}
-                              onChange={(e) => setTransactionAlerts(e.target.checked)}
-                            />
-                          </HStack>
-                          <HStack justify="space-between">
-                            <Box>
-                              <Text fontWeight="500">Login Alerts</Text>
-                              <Text fontSize="sm" color="gray.600">
-                                Get notified when someone logs into your account
-                              </Text>
-                            </Box>
-                            <Switch
-                              colorScheme="brand"
-                              isChecked={loginAlerts}
-                              onChange={(e) => setLoginAlerts(e.target.checked)}
-                            />
-                          </HStack>
-                          <HStack justify="space-between">
-                            <Box>
-                              <Text fontWeight="500">Marketing Emails</Text>
-                              <Text fontSize="sm" color="gray.600">
-                                Receive updates about new features and promotions
-                              </Text>
-                            </Box>
-                            <Switch
-                              colorScheme="brand"
-                              isChecked={marketingEmails}
-                              onChange={(e) => setMarketingEmails(e.target.checked)}
                             />
                           </HStack>
                         </VStack>
@@ -401,46 +253,6 @@ export const SettingsPage = () => {
           </TabPanels>
         </Tabs>
       </VStack>
-
-      {/* Change Password Modal */}
-      <Modal isOpen={isPasswordOpen} onClose={onPasswordClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)}>
-            <ModalHeader>Change Password</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4}>
-                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.old_password}>
-                  <FormLabel>Current Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('old_password')} />
-                  <FormErrorMessage>{passwordForm.formState.errors.old_password?.message as string}</FormErrorMessage>
-                </FormControl>
-                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.new_password}>
-                  <FormLabel>New Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('new_password')} />
-                  <FormErrorMessage>{passwordForm.formState.errors.new_password?.message as string}</FormErrorMessage>
-                </FormControl>
-                <FormControl isRequired isInvalid={!!passwordForm.formState.errors.confirm_password}>
-                  <FormLabel>Confirm New Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('confirm_password')} />
-                  <FormErrorMessage>{passwordForm.formState.errors.confirm_password?.message as string}</FormErrorMessage>
-                </FormControl>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onPasswordClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="brand" type="submit" isLoading={changingPassword}>
-                Change Password
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* 2FA Modal Removed - not available in auth API */}
     </Container>
   );
 };

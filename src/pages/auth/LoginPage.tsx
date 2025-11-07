@@ -1,133 +1,23 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Button,
-  Checkbox,
-  Divider,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
   Heading,
-  HStack,
-  Input,
-  InputGroup,
-  InputRightElement,
-  Link,
-  Stack,
   Text,
   useToast,
   VStack,
-  IconButton,
 } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
-import { MdFingerprint } from 'react-icons/md';
-import { useLoginMutation, useBiometricLoginMutation, useGoogleOAuthMutation } from '@/features/auth/services/authApi';
+import { useGoogleOAuthMutation } from '@/features/auth/services/authApi';
 import { useLazyGetProfileQuery } from '@/features/profile/services/profileApi';
 import { useAppDispatch } from '@/hooks';
 import { setCredentials } from '@/store/slices/authSlice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
-import { handleApiError } from '@/utils/formErrorHandler';
-
-// Validation schema
-const loginSchema = yup.object().shape({
-  email: yup.string().email('Invalid email address').required('Email is required'),
-  password: yup.string().required('Password is required'),
-  rememberMe: yup.boolean(),
-});
-
-interface LoginForm {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const dispatch = useAppDispatch();
-  const [showPassword, setShowPassword] = useState(false);
-  const [hasBiometric] = useState(false); // Check if user has biometric enabled
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: yupResolver(loginSchema),
-    defaultValues: {
-      rememberMe: false,
-    },
-  });
-
-  const [login, { isLoading }] = useLoginMutation();
-  const [biometricLogin, { isLoading: isBiometricLoading }] = useBiometricLoginMutation();
   const [googleOAuth, { isLoading: isGoogleLoading }] = useGoogleOAuthMutation();
   const [getProfile] = useLazyGetProfileQuery();
-
-  const onSubmit = async (data: LoginForm) => {
-    try {
-      const result = await login({
-        email: data.email,
-        password: data.password,
-      }).unwrap();
-
-      toast({
-        title: 'OTP Sent',
-        description: result.message || 'Please check your email for the OTP code',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      // Navigate to OTP verification with email in state
-      navigate('/verify-otp', {
-        state: {
-          email: data.email,
-          fromLogin: true,
-        },
-      });
-    } catch (error: any) {
-      handleApiError(error, setError, toast);
-    }
-  };
-
-  const handleBiometricLogin = async () => {
-    try {
-      const result = await biometricLogin({
-        device_id: 'device-123', // Get from device storage
-      }).unwrap();
-
-      if (result.data) {
-        dispatch(
-          setCredentials({
-            user: result.data.user,
-            accessToken: result.data.access,
-            refreshToken: result.data.refresh || null,
-          })
-        );
-
-        toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
-          status: 'success',
-          duration: 3000,
-        });
-
-        navigate('/dashboard');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Biometric Login Failed',
-        description: error?.data?.message || 'Could not authenticate with biometric',
-        status: 'error',
-        duration: 5000,
-      });
-    }
-  };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
@@ -206,7 +96,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <VStack spacing={6} align="stretch">
+    <VStack spacing={8} align="stretch">
       {/* Header */}
       <VStack spacing={2} textAlign="center">
         <Heading
@@ -215,107 +105,12 @@ export const LoginPage = () => {
           bgGradient="linear(to-r, brand.500, brand.600)"
           bgClip="text"
         >
-          Welcome Back
+          Welcome to PayCore
         </Heading>
         <Text fontSize="md" color="gray.600">
-          Sign in to your PayCore account
+          Sign in with your Google account to continue
         </Text>
       </VStack>
-
-      {/* Login Form */}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={4}>
-          {/* Email Field */}
-          <FormControl isInvalid={!!errors.email}>
-            <FormLabel htmlFor="email">Email address</FormLabel>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              size="lg"
-              {...register('email')}
-            />
-            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-          </FormControl>
-
-          {/* Password Field */}
-          <FormControl isInvalid={!!errors.password}>
-            <FormLabel htmlFor="password">Password</FormLabel>
-            <InputGroup size="lg">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
-                {...register('password')}
-              />
-              <InputRightElement>
-                <IconButton
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                />
-              </InputRightElement>
-            </InputGroup>
-            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-          </FormControl>
-
-          {/* Remember Me & Forgot Password */}
-          <HStack justify="space-between">
-            <Checkbox colorScheme="brand" {...register('rememberMe')}>
-              Remember me
-            </Checkbox>
-            <Link
-              as={RouterLink}
-              to="/forgot-password"
-              color="brand.500"
-              fontWeight="medium"
-              fontSize="sm"
-              _hover={{ color: 'brand.600' }}
-            >
-              Forgot password?
-            </Link>
-          </HStack>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            colorScheme="brand"
-            size="lg"
-            isLoading={isLoading}
-            loadingText="Signing in..."
-            w="full"
-          >
-            Sign in
-          </Button>
-
-          {/* Biometric Login Button */}
-          {hasBiometric && (
-            <Button
-              leftIcon={<MdFingerprint size={20} />}
-              variant="outline"
-              colorScheme="brand"
-              size="lg"
-              onClick={handleBiometricLogin}
-              isLoading={isBiometricLoading}
-              loadingText="Authenticating..."
-              w="full"
-            >
-              Sign in with Biometric
-            </Button>
-          )}
-        </Stack>
-      </form>
-
-      {/* Divider */}
-      <HStack>
-        <Divider />
-        <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
-          Or continue with
-        </Text>
-        <Divider />
-      </HStack>
 
       {/* Google Sign-In */}
       <GoogleSignInButton
@@ -331,23 +126,6 @@ export const LoginPage = () => {
         text="Sign in with Google"
         isLoading={isGoogleLoading}
       />
-
-      {/* Sign Up Link */}
-      <HStack justify="center" spacing={1}>
-        <Text color="gray.600" fontSize="sm">
-          Don't have an account?
-        </Text>
-        <Link
-          as={RouterLink}
-          to="/register"
-          color="brand.500"
-          fontWeight="semibold"
-          fontSize="sm"
-          _hover={{ color: 'brand.600', textDecoration: 'underline' }}
-        >
-          Sign up
-        </Link>
-      </HStack>
     </VStack>
   );
 };

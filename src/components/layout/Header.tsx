@@ -32,25 +32,29 @@ import {
 } from '@chakra-ui/react';
 import { FiBell, FiLogOut, FiUser, FiSettings, FiCheck, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@/hooks';
-import { logout, selectCurrentUser } from '@/store/slices/authSlice';
+import { useAppDispatch } from '@/hooks';
+import { logout } from '@/store/slices/authSlice';
 import { useLogoutMutation } from '@/features/auth/services/authApi';
 import {
   useListNotificationsQuery,
   useMarkAsReadMutation,
   useDeleteNotificationsMutation,
 } from '@/features/notifications/services/notificationsApi';
+import { useGetProfileQuery } from '@/features/profile/services/profileApi';
 import { formatRelativeTime } from '@/utils/formatters';
 import { useState } from 'react';
 
 export const Header = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(selectCurrentUser);
   const toast = useToast();
   const [logoutMutation] = useLogoutMutation();
   const { isOpen: isNotificationsOpen, onOpen: onNotificationsOpen, onClose: onNotificationsClose } = useDisclosure();
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
+
+  // Fetch profile data
+  const { data: profileData } = useGetProfileQuery();
+  const profile = profileData?.data;
 
   // Fetch notifications - limited for header badge, unlimited for modal
   const { data: notificationsData } = useListNotificationsQuery({ limit: 5 });
@@ -184,7 +188,7 @@ export const Header = () => {
       <Flex h="full" align="center" justify="space-between">
         <Box>
           <Text fontSize="lg" fontWeight="600">
-            Welcome back, {user?.first_name}!
+            Welcome back, {profile?.first_name}!
           </Text>
           <Text fontSize="sm" color="gray.500">
             {new Date().toLocaleDateString('en-US', {
@@ -229,8 +233,8 @@ export const Header = () => {
             <MenuButton>
               <Avatar
                 size="sm"
-                name={`${user?.first_name} ${user?.last_name}`}
-                src={user?.avatar || undefined}
+                name={`${profile?.first_name} ${profile?.last_name}`}
+                src={profile?.avatar_url || undefined}
                 bg="brand.500"
                 color="white"
                 fontWeight="bold"

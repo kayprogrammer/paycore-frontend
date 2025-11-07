@@ -146,6 +146,15 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Auth'],
     }),
+
+    // 14. Resend OTP
+    resendOTP: builder.mutation<ApiResponse<{ message: string }>, { email: string }>({
+      query: (data) => ({
+        url: '/auth/resend-otp',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -163,4 +172,5 @@ export const {
   useDisableBiometricMutation,
   useGoogleOAuthMutation,
   useVerifyEmailMutation,
+  useResendOTPMutation,
 } = authApi;
