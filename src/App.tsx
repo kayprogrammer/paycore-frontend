@@ -24,6 +24,7 @@ import { InvestmentsPage } from '@/pages/investments/InvestmentsPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { SupportPage } from '@/pages/SupportPage';
+import { TicketsPage } from '@/pages/TicketsPage';
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -192,6 +193,16 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <SupportPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <TicketsPage />
               </MainLayout>
             </ProtectedRoute>
           }

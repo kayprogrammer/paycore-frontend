@@ -29,7 +29,7 @@ export const notificationsApi = baseApi.injectEndpoints({
     // 3. Mark as Read
     markAsRead: builder.mutation<ApiResponse<{ message: string }>, MarkAsReadRequest>({
       query: (data) => ({
-        url: '/notifications/mark-as-read',
+        url: '/notifications/mark-read',
         method: 'POST',
         body: data,
       }),

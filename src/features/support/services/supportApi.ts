@@ -25,7 +25,7 @@ export const supportApi = baseApi.injectEndpoints({
     // 2. List Tickets
     listTickets: builder.query<ApiResponse<PaginatedResponse<Ticket>>, QueryParams | void>({
       query: (params) => ({
-        url: '/support/tickets',
+        url: '/support/tickets/list',
         params,
       }),
       providesTags: ['Support'],
@@ -33,14 +33,14 @@ export const supportApi = baseApi.injectEndpoints({
 
     // 3. Get Ticket
     getTicket: builder.query<ApiResponse<Ticket>, string>({
-      query: (id) => `/support/tickets/ticket/${id}`,
+      query: (id) => `/support/tickets/${id}`,
       providesTags: ['Support'],
     }),
 
     // 4. Close Ticket
     closeTicket: builder.mutation<ApiResponse<Ticket>, string>({
       query: (id) => ({
-        url: `/support/tickets/ticket/${id}/close`,
+        url: `/support/tickets/${id}/close`,
         method: 'POST',
       }),
       invalidatesTags: ['Support'],
@@ -52,7 +52,7 @@ export const supportApi = baseApi.injectEndpoints({
       { ticketId: string; data: RateTicketRequest }
     >({
       query: ({ ticketId, data }) => ({
-        url: `/support/tickets/ticket/${ticketId}/rate`,
+        url: `/support/tickets/${ticketId}/rate`,
         method: 'POST',
         body: data,
       }),
@@ -65,21 +65,28 @@ export const supportApi = baseApi.injectEndpoints({
       { ticketId: string; data: AddMessageRequest }
     >({
       query: ({ ticketId, data }) => {
-        const formData = new FormData();
-        formData.append('message', data.message);
-
-        if (data.attachments) {
+        // If there are attachments, use FormData; otherwise use JSON
+        if (data.attachments && data.attachments.length > 0) {
+          const formData = new FormData();
+          formData.append('message', data.message);
           data.attachments.forEach((file, index) => {
             formData.append(`attachments[${index}]`, file);
           });
-        }
 
-        return {
-          url: `/support/tickets/ticket/${ticketId}/messages`,
-          method: 'POST',
-          body: formData,
-          formData: true,
-        };
+          return {
+            url: `/support/tickets/${ticketId}/messages`,
+            method: 'POST',
+            body: formData,
+            formData: true,
+          };
+        } else {
+          // No attachments, send as JSON
+          return {
+            url: `/support/tickets/${ticketId}/messages`,
+            method: 'POST',
+            body: { message: data.message },
+          };
+        }
       },
       invalidatesTags: ['Support'],
     }),
@@ -90,7 +97,7 @@ export const supportApi = baseApi.injectEndpoints({
       { ticketId: string; params?: QueryParams }
     >({
       query: ({ ticketId, params }) => ({
-        url: `/support/tickets/ticket/${ticketId}/messages`,
+        url: `/support/tickets/${ticketId}/messages`,
         params,
       }),
       providesTags: ['Support'],

@@ -9,6 +9,7 @@ import {
   FiTrendingUp,
   FiPieChart,
   FiHelpCircle,
+  FiMessageCircle,
   FiSettings,
 } from 'react-icons/fi';
 import { useAppSelector } from '@/hooks';
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { label: 'Loans', icon: FiTrendingUp, path: '/loans' },
   { label: 'Investments', icon: FiPieChart, path: '/investments' },
   { label: 'Support', icon: FiHelpCircle, path: '/support' },
+  { label: 'My Tickets', icon: FiMessageCircle, path: '/tickets' },
   { label: 'Settings', icon: FiSettings, path: '/settings' },
 ];
 

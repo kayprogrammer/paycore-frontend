@@ -1,10 +1,17 @@
 export type TicketCategory =
-  | 'account_issues'
-  | 'transaction_issues'
-  | 'card_issues'
-  | 'kyc_issues'
-  | 'technical_issues'
-  | 'general_inquiry';
+  | 'account'
+  | 'wallet'
+  | 'transaction'
+  | 'card'
+  | 'loan'
+  | 'investment'
+  | 'bill_payment'
+  | 'payment'
+  | 'kyc'
+  | 'security'
+  | 'technical'
+  | 'feedback'
+  | 'other';
 
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_customer' | 'resolved' | 'closed';

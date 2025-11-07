@@ -113,7 +113,16 @@ export const SupportPage = () => {
     { skip: !activeTicketId, pollingInterval: 3000 } // Poll every 3 seconds for new messages
   );
 
-  const messages = (messagesData?.data as any)?.items || [];
+  // Debug: Log messages data structure
+  useEffect(() => {
+    if (messagesData) {
+      console.log('Messages Data:', messagesData);
+      console.log('messagesData.data:', messagesData.data);
+    }
+  }, [messagesData]);
+
+  // Backend returns messages in data.data (nested structure)
+  const messages = (messagesData?.data as any)?.data || [];
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -124,14 +133,20 @@ export const SupportPage = () => {
     try {
       const response = await createTicket({
         subject: 'Live Chat Support',
-        category: 'general_inquiry',
+        category: 'other',
         priority: 'medium',
         description: 'User initiated live chat support',
       }).unwrap();
 
-      setActiveTicketId(response.data.id);
+      console.log('Create Ticket Response:', response);
+      console.log('Ticket ID:', response.data?.ticket_id || response.data?.id);
+
+      // Backend returns ticket_id, not id
+      const ticketId = response.data?.ticket_id || response.data?.id;
+      setActiveTicketId(ticketId);
       onChatOpen();
     } catch (error: any) {
+      console.error('Create ticket error:', error);
       toast({
         title: 'Failed to start chat',
         description: error?.data?.message || 'Please try again',
@@ -142,17 +157,33 @@ export const SupportPage = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !activeTicketId) return;
+    console.log('Send button clicked!');
+    console.log('Message:', message);
+    console.log('Active Ticket ID:', activeTicketId);
+
+    if (!message.trim() || !activeTicketId) {
+      console.log('Validation failed - message or ticketId missing');
+      return;
+    }
 
     try {
-      await addMessage({
+      console.log('Sending message...');
+      const result = await addMessage({
         ticketId: activeTicketId,
         data: { message: message.trim() },
       }).unwrap();
 
+      console.log('Message sent successfully:', result);
       setMessage('');
       refetchMessages();
+
+      toast({
+        title: 'Message sent',
+        status: 'success',
+        duration: 2000,
+      });
     } catch (error: any) {
+      console.error('Send message error:', error);
       toast({
         title: 'Failed to send message',
         description: error?.data?.message || 'Please try again',
@@ -430,41 +461,45 @@ export const SupportPage = () => {
                   </VStack>
                 ) : (
                   <VStack align="stretch" spacing={3}>
-                    {messages.map((msg: any) => (
-                      <Flex
-                        key={msg.id}
-                        justify={msg.sender_type === 'customer' ? 'flex-end' : 'flex-start'}
-                      >
-                        <HStack
-                          spacing={2}
-                          maxW="70%"
-                          flexDirection={msg.sender_type === 'customer' ? 'row-reverse' : 'row'}
+                    {messages.map((msg: any) => {
+                      // Backend uses is_from_customer instead of sender_type
+                      const isCustomer = msg.is_from_customer;
+                      return (
+                        <Flex
+                          key={msg.message_id || msg.id}
+                          justify={isCustomer ? 'flex-end' : 'flex-start'}
                         >
-                          <Avatar
-                            size="sm"
-                            name={msg.sender_name}
-                            bg={msg.sender_type === 'customer' ? 'brand.500' : 'green.500'}
-                          />
-                          <Box
-                            bg={msg.sender_type === 'customer' ? 'brand.500' : 'white'}
-                            color={msg.sender_type === 'customer' ? 'white' : 'black'}
-                            px={4}
-                            py={2}
-                            borderRadius="lg"
-                            boxShadow="sm"
+                          <HStack
+                            spacing={2}
+                            maxW="70%"
+                            flexDirection={isCustomer ? 'row-reverse' : 'row'}
                           >
-                            <Text fontSize="sm">{msg.message}</Text>
-                            <Text
-                              fontSize="xs"
-                              opacity={0.7}
-                              mt={1}
+                            <Avatar
+                              size="sm"
+                              name={msg.sender_email}
+                              bg={isCustomer ? 'brand.500' : 'green.500'}
+                            />
+                            <Box
+                              bg={isCustomer ? 'brand.500' : 'white'}
+                              color={isCustomer ? 'white' : 'black'}
+                              px={4}
+                              py={2}
+                              borderRadius="lg"
+                              boxShadow="sm"
                             >
-                              {new Date(msg.created_at).toLocaleTimeString()}
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </Flex>
-                    ))}
+                              <Text fontSize="sm">{msg.message}</Text>
+                              <Text
+                                fontSize="xs"
+                                opacity={0.7}
+                                mt={1}
+                              >
+                                {new Date(msg.created_at).toLocaleTimeString()}
+                              </Text>
+                            </Box>
+                          </HStack>
+                        </Flex>
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </VStack>
                 )}
@@ -476,12 +511,13 @@ export const SupportPage = () => {
                   placeholder="Type your message..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
                     }
                   }}
+                  disabled={sendingMessage}
                 />
                 <IconButton
                   icon={<FiSend />}
@@ -489,7 +525,7 @@ export const SupportPage = () => {
                   colorScheme="brand"
                   onClick={handleSendMessage}
                   isLoading={sendingMessage}
-                  isDisabled={!message.trim()}
+                  isDisabled={!message.trim() || sendingMessage}
                 />
               </HStack>
             </VStack>
