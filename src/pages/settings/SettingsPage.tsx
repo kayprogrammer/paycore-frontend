@@ -29,12 +29,6 @@ import {
   FormLabel,
   Input,
   FormErrorMessage,
-  AlertDialog,
-  AlertDialogOverlay,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogBody,
-  AlertDialogFooter,
   Badge,
   Table,
   Thead,
@@ -47,21 +41,18 @@ import {
   FiShield,
   FiBell,
   FiMonitor,
-  FiTrash2,
   FiKey,
   FiLock,
   FiMail,
   FiSmartphone,
-  FiAlertCircle,
 } from 'react-icons/fi';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   useChangePasswordMutation,
   useLogoutMutation,
 } from '@/features/auth/services/authApi';
 import { formatRelativeTime } from '@/utils/formatters';
-import { useNavigate } from 'react-router-dom';
 import { handleApiError } from '@/utils/formErrorHandler';
 
 interface PasswordForm {
@@ -72,8 +63,6 @@ interface PasswordForm {
 
 export const SettingsPage = () => {
   const toast = useToast();
-  const navigate = useNavigate();
-  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // State
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -85,7 +74,6 @@ export const SettingsPage = () => {
 
   // Modals
   const { isOpen: isPasswordOpen, onOpen: onPasswordOpen, onClose: onPasswordClose } = useDisclosure();
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
 
   // Forms
   const passwordForm = useForm<PasswordForm>();
@@ -143,26 +131,6 @@ export const SettingsPage = () => {
   // 2FA functionality removed - not available in current auth API
   // const handleToggle2FA = async (enable: boolean) => { ... }
   // const handleEnable2FA = async (data: TwoFactorForm) => { ... }
-
-  const handleDeleteAccount = async () => {
-    try {
-      // Call delete account API
-      toast({
-        title: 'Account deleted',
-        description: 'Your account has been permanently deleted',
-        status: 'success',
-        duration: 3000,
-      });
-      await logout().unwrap();
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: 'Failed to delete account',
-        description: error.data?.message,
-        status: 'error',
-      });
-    }
-  };
 
   const handleLogoutDevice = async (deviceId: string) => {
     try {
@@ -412,28 +380,6 @@ export const SettingsPage = () => {
               <VStack spacing={6} align="stretch">
                 <Card>
                   <CardBody>
-                    <VStack align="stretch" spacing={6}>
-                      <Box>
-                        <Heading size="sm" color="red.600" mb={2}>
-                          Danger Zone
-                        </Heading>
-                        <Text fontSize="sm" color="gray.600" mb={4}>
-                          Once you delete your account, there is no going back. Please be certain.
-                        </Text>
-                        <Button
-                          colorScheme="red"
-                          leftIcon={<Icon as={FiTrash2} />}
-                          onClick={onDeleteOpen}
-                        >
-                          Delete Account
-                        </Button>
-                      </Box>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                <Card>
-                  <CardBody>
                     <Heading size="sm" mb={4}>
                       Data & Privacy
                     </Heading>
@@ -495,41 +441,6 @@ export const SettingsPage = () => {
       </Modal>
 
       {/* 2FA Modal Removed - not available in auth API */}
-
-      {/* Delete Account Confirmation */}
-      <AlertDialog isOpen={isDeleteOpen} leastDestructiveRef={cancelRef} onClose={onDeleteClose}>
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Delete Account</AlertDialogHeader>
-            <AlertDialogBody>
-              <VStack align="start" spacing={3}>
-                <HStack color="red.500">
-                  <Icon as={FiAlertCircle} />
-                  <Text fontWeight="600">This action cannot be undone!</Text>
-                </HStack>
-                <Text>
-                  Deleting your account will permanently remove all your data, including:
-                </Text>
-                <VStack align="start" pl={4} spacing={1}>
-                  <Text fontSize="sm">• All wallets and transactions</Text>
-                  <Text fontSize="sm">• Cards and payment methods</Text>
-                  <Text fontSize="sm">• Investment and loan records</Text>
-                  <Text fontSize="sm">• Personal information and documents</Text>
-                </VStack>
-                <Text fontWeight="600">Are you absolutely sure?</Text>
-              </VStack>
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onDeleteClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="red" onClick={handleDeleteAccount} ml={3}>
-                Yes, Delete My Account
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Container>
   );
 };

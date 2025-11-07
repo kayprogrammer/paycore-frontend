@@ -103,9 +103,9 @@ export const supportApi = baseApi.injectEndpoints({
     }),
 
     // 9. List FAQs
-    listFAQs: builder.query<ApiResponse<FAQ[]>, { category?: string }>({
+    listFAQs: builder.query<ApiResponse<FAQ[]>, { category?: string } | void>({
       query: (params) => ({
-        url: '/support/faqs',
+        url: '/support/faq/list',
         params,
       }),
       providesTags: ['Support'],

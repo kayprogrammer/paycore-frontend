@@ -55,31 +55,46 @@ export const DashboardPage = () => {
 
   // Fetch data
   const { data: walletSummary, isLoading: loadingWallets, error: walletError } = useGetWalletSummaryQuery();
-  const { data: transactionsData, isLoading: loadingTransactions } = useListTransactionsQuery({ limit: 5 });
-  const { data: statisticsData, isLoading: loadingStats } = useGetTransactionStatisticsQuery({});
-  const { data: loanSummary, isLoading: loadingLoans } = useGetLoanSummaryQuery();
-  const { data: portfolio, isLoading: loadingInvestments } = useGetPortfolioQuery();
+  const { data: transactionsData, isLoading: loadingTransactions, error: transactionsError } = useListTransactionsQuery({ limit: 5 });
+  const { data: statisticsData, isLoading: loadingStats, error: statsError } = useGetTransactionStatisticsQuery();
+  const { data: loanSummary, isLoading: loadingLoans, error: loansError } = useGetLoanSummaryQuery();
+  const { data: portfolio, isLoading: loadingInvestments, error: portfolioError } = useGetPortfolioQuery();
   const { data: kycLevel } = useGetCurrentKYCLevelQuery();
 
   const walletData = walletSummary?.data;
-  const transactions = transactionsData?.data?.data || [];
+  // Backend returns transactions directly in data.transactions, not data.data.transactions
+  const transactions = (transactionsData?.data as any)?.transactions || [];
   const statistics = statisticsData?.data;
   const loans = loanSummary?.data;
   const investments = portfolio?.data;
   const kyc = kycLevel?.data;
 
-  // Prepare chart data
-  const transactionTrend = statistics?.daily_statistics?.map((stat: any) => ({
-    date: new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    amount: stat.total_amount,
-    count: stat.count,
-  })) || [];
+  // Extract NGN balance data from the summary (backend returns total_balances object keyed by currency)
+  const ngnBalance = walletData?.total_balances?.['NGN'] || {
+    total_balance: 0,
+    total_available: 0,
+    total_pending: 0,
+    symbol: '₦',
+    wallet_count: 0
+  };
 
+  // Calculate total holds (balance - available)
+  const totalHolds = (ngnBalance.total_balance || 0) - (ngnBalance.total_available || 0);
+
+  // Prepare chart data
+  // Backend doesn't provide daily_statistics, so we'll use transaction data to create a simple trend
+  const transactionTrend = transactions.slice(0, 5).reverse().map((transaction: any, index: number) => ({
+    date: new Date(transaction.initiated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    amount: parseFloat(transaction.amount),
+    count: index + 1,
+  }));
+
+  // Portfolio Distribution - use actual field names from backend
   const walletDistribution = [
-    { name: 'Main Wallet', value: walletData?.total_balance || 0 },
-    { name: 'Loans', value: loans?.total_disbursed || 0 },
-    { name: 'Investments', value: investments?.total_invested || 0 },
-  ];
+    { name: 'Main Wallet', value: parseFloat(ngnBalance.total_balance?.toString() || '0') },
+    { name: 'Loans', value: parseFloat(loans?.total_borrowed || '0') },
+    { name: 'Investments', value: parseFloat(investments?.total_invested || '0') },
+  ].filter(item => item.value > 0); // Only show non-zero values
 
   const quickActions = [
     {
@@ -186,10 +201,10 @@ export const DashboardPage = () => {
                     Total Balance
                   </Text>
                   <Heading size="2xl">
-                    {formatCurrency(walletData?.total_balance || 0, walletData?.currency || 'NGN')}
+                    {formatCurrency(ngnBalance.total_balance, 'NGN')}
                   </Heading>
                   <Text fontSize="sm" opacity={0.8}>
-                    Across {walletData?.total_wallets || 0} wallet{walletData?.total_wallets !== 1 ? 's' : ''}
+                    Across {walletData?.wallet_count || 0} wallet{walletData?.wallet_count !== 1 ? 's' : ''}
                   </Text>
                 </VStack>
                 <Icon as={MdAccountBalanceWallet} boxSize={16} opacity={0.2} />
@@ -201,7 +216,7 @@ export const DashboardPage = () => {
                     Available
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
-                    {formatCurrency(walletData?.available_balance || 0, walletData?.currency || 'NGN')}
+                    {formatCurrency(ngnBalance.total_available, 'NGN')}
                   </Text>
                 </Box>
                 <Box>
@@ -209,15 +224,15 @@ export const DashboardPage = () => {
                     On Hold
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
-                    {formatCurrency(walletData?.total_holds || 0, walletData?.currency || 'NGN')}
+                    {formatCurrency(totalHolds, 'NGN')}
                   </Text>
                 </Box>
                 <Box>
                   <Text fontSize="xs" opacity={0.8} mb={1}>
-                    Active Cards
+                    Active Wallets
                   </Text>
                   <Text fontSize="lg" fontWeight="bold">
-                    {walletData?.active_wallets || 0}
+                    {ngnBalance.wallet_count}
                   </Text>
                 </Box>
               </SimpleGrid>
@@ -422,36 +437,43 @@ export const DashboardPage = () => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {transactions.map((transaction: any) => (
-                    <Tr key={transaction.id}>
-                      <Td>
-                        <HStack>
-                          <Icon
-                            as={transaction.type === 'credit' ? FiArrowDownRight : FiArrowUpRight}
-                            color={transaction.type === 'credit' ? 'green.500' : 'red.500'}
-                          />
-                          <Text textTransform="capitalize">{transaction.transaction_type}</Text>
-                        </HStack>
-                      </Td>
-                      <Td fontFamily="mono" fontSize="sm">
-                        {transaction.reference}
-                      </Td>
-                      <Td fontWeight="600">
-                        <Text color={transaction.type === 'credit' ? 'green.600' : 'red.600'}>
-                          {transaction.type === 'credit' ? '+' : '-'}
-                          {formatCurrency(transaction.amount, transaction.currency)}
-                        </Text>
-                      </Td>
-                      <Td>
-                        <Badge colorScheme={getStatusColor(transaction.status)}>
-                          {transaction.status}
-                        </Badge>
-                      </Td>
-                      <Td fontSize="sm" color="gray.600">
-                        {formatRelativeTime(transaction.created_at)}
-                      </Td>
-                    </Tr>
-                  ))}
+                  {transactions.map((transaction: any) => {
+                    // Determine if transaction is credit (incoming) or debit (outgoing)
+                    // Credit: loan_disbursement, investment_payout, transfer (when to_user exists)
+                    // Debit: investment, bill_payment, transfer (when from_user exists)
+                    const isCredit = transaction.to_user_name && !transaction.from_user_name;
+
+                    return (
+                      <Tr key={transaction.transaction_id}>
+                        <Td>
+                          <HStack>
+                            <Icon
+                              as={isCredit ? FiArrowDownRight : FiArrowUpRight}
+                              color={isCredit ? 'green.500' : 'red.500'}
+                            />
+                            <Text textTransform="capitalize">{transaction.transaction_type?.replace(/_/g, ' ')}</Text>
+                          </HStack>
+                        </Td>
+                        <Td fontFamily="mono" fontSize="sm">
+                          {transaction.reference || '-'}
+                        </Td>
+                        <Td fontWeight="600">
+                          <Text color={isCredit ? 'green.600' : 'red.600'}>
+                            {isCredit ? '+' : '-'}
+                            {formatCurrency(transaction.amount, transaction.currency_code || 'NGN')}
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Badge colorScheme={getStatusColor(transaction.status)}>
+                            {transaction.status}
+                          </Badge>
+                        </Td>
+                        <Td fontSize="sm" color="gray.600">
+                          {formatRelativeTime(transaction.initiated_at)}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
                 </Tbody>
               </Table>
             ) : (

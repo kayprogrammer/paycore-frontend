@@ -17,6 +17,19 @@ import {
   AccordionIcon,
   Link,
   Divider,
+  Skeleton,
+  SkeletonText,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  Input,
+  IconButton,
+  Flex,
+  Avatar,
+  useDisclosure,
 } from '@chakra-ui/react';
 import {
   FiMail,
@@ -25,41 +38,135 @@ import {
   FiBook,
   FiHelpCircle,
   FiExternalLink,
+  FiSend,
+  FiX,
 } from 'react-icons/fi';
+import {
+  useListFAQsQuery,
+  useCreateTicketMutation,
+  useAddMessageMutation,
+  useGetTicketMessagesQuery,
+} from '@/features/support/services/supportApi';
+import { useState, useRef, useEffect } from 'react';
+import { useToast } from '@chakra-ui/react';
+
+// Simple component to render markdown-like formatting
+const FormattedText = ({ text }: { text: string }) => {
+  const formatText = (content: string) => {
+    // Split by lines
+    const lines = content.split('\n');
+    const elements: JSX.Element[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        // Empty line
+        elements.push(<Box key={index} h={2} />);
+      } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+        // Bold heading
+        const text = trimmed.slice(2, -2);
+        elements.push(
+          <Text key={index} fontWeight="bold" mt={2} mb={1}>
+            {text}
+          </Text>
+        );
+      } else if (trimmed.startsWith('•')) {
+        // Bullet point
+        elements.push(
+          <Text key={index} pl={4} fontSize="sm">
+            {trimmed}
+          </Text>
+        );
+      } else {
+        // Regular text
+        elements.push(
+          <Text key={index} fontSize="sm">
+            {trimmed}
+          </Text>
+        );
+      }
+    });
+
+    return elements;
+  };
+
+  return <Box>{formatText(text)}</Box>;
+};
 
 export const SupportPage = () => {
-  const faqs = [
-    {
-      question: 'How do I create a wallet?',
-      answer:
-        'Navigate to the Wallets page and click "Create Wallet". Choose your desired currency and wallet type, then follow the prompts to complete the setup.',
-    },
-    {
-      question: 'How long does KYC verification take?',
-      answer:
-        'KYC verification typically takes 15 seconds to a few minutes for automatic approval. In some cases, manual review may be required which can take up to 24-48 hours.',
-    },
-    {
-      question: 'What are the transaction limits?',
-      answer:
-        'Transaction limits depend on your KYC level. TIER_0 has basic limits, while TIER_2 and TIER_3 offer higher transaction limits for verified users.',
-    },
-    {
-      question: 'How do I apply for a loan?',
-      answer:
-        'Go to the Loans page, browse available loan products, and click "Apply Now" on your preferred option. Fill in the required information and submit your application for review.',
-    },
-    {
-      question: 'Are my funds secure?',
-      answer:
-        'Yes, we use industry-standard encryption and security measures to protect your funds. All transactions are monitored for suspicious activity, and we comply with financial regulations.',
-    },
-    {
-      question: 'How do I reset my PIN?',
-      answer:
-        'You can reset your PIN from the Settings page under Security settings. You will need to verify your identity before creating a new PIN.',
-    },
-  ];
+  const toast = useToast();
+  const { data: faqData, isLoading: loadingFAQs } = useListFAQsQuery();
+  const faqs = faqData?.data || [];
+
+  // Live Chat state
+  const { isOpen: isChatOpen, onOpen: onChatOpen, onClose: onChatClose } = useDisclosure();
+  const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // API hooks
+  const [createTicket, { isLoading: creatingTicket }] = useCreateTicketMutation();
+  const [addMessage, { isLoading: sendingMessage }] = useAddMessageMutation();
+  const { data: messagesData, refetch: refetchMessages } = useGetTicketMessagesQuery(
+    { ticketId: activeTicketId!, params: { limit: 50 } },
+    { skip: !activeTicketId, pollingInterval: 3000 } // Poll every 3 seconds for new messages
+  );
+
+  const messages = (messagesData?.data as any)?.items || [];
+
+  // Scroll to bottom when messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleStartChat = async () => {
+    try {
+      const response = await createTicket({
+        subject: 'Live Chat Support',
+        category: 'general_inquiry',
+        priority: 'medium',
+        description: 'User initiated live chat support',
+      }).unwrap();
+
+      setActiveTicketId(response.data.id);
+      onChatOpen();
+    } catch (error: any) {
+      toast({
+        title: 'Failed to start chat',
+        description: error?.data?.message || 'Please try again',
+        status: 'error',
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !activeTicketId) return;
+
+    try {
+      await addMessage({
+        ticketId: activeTicketId,
+        data: { message: message.trim() },
+      }).unwrap();
+
+      setMessage('');
+      refetchMessages();
+    } catch (error: any) {
+      toast({
+        title: 'Failed to send message',
+        description: error?.data?.message || 'Please try again',
+        status: 'error',
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleCloseChat = () => {
+    onChatClose();
+    setActiveTicketId(null);
+    setMessage('');
+  };
 
   return (
     <Container maxW="container.xl" py={8}>
@@ -129,7 +236,13 @@ export const SupportPage = () => {
                   <Text fontSize="sm" color="gray.600" mb={2}>
                     Chat with our support team
                   </Text>
-                  <Button size="sm" colorScheme="brand" rightIcon={<FiExternalLink />}>
+                  <Button
+                    size="sm"
+                    colorScheme="brand"
+                    rightIcon={<FiMessageCircle />}
+                    onClick={handleStartChat}
+                    isLoading={creatingTicket}
+                  >
                     Start Chat
                   </Button>
                 </Box>
@@ -147,23 +260,42 @@ export const SupportPage = () => {
             <Heading size="md">Frequently Asked Questions</Heading>
           </HStack>
 
-          <Accordion allowToggle>
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index}>
-                <h2>
-                  <AccordionButton py={4}>
-                    <Box flex="1" textAlign="left" fontWeight="600">
-                      {faq.question}
-                    </Box>
-                    <AccordionIcon />
-                  </AccordionButton>
-                </h2>
-                <AccordionPanel pb={4} color="gray.600">
-                  {faq.answer}
-                </AccordionPanel>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          {loadingFAQs ? (
+            <VStack spacing={4} align="stretch">
+              {[1, 2, 3, 4].map((i) => (
+                <Box key={i} p={4} borderWidth="1px" borderRadius="md">
+                  <Skeleton height="20px" width="60%" mb={2} />
+                  <SkeletonText noOfLines={2} spacing={2} />
+                </Box>
+              ))}
+            </VStack>
+          ) : faqs.length > 0 ? (
+            <Accordion allowToggle>
+              {faqs.map((faq: any) => (
+                <AccordionItem key={faq.faq_id}>
+                  <h2>
+                    <AccordionButton py={4}>
+                      <Box flex="1" textAlign="left" fontWeight="600">
+                        {faq.question}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                  </h2>
+                  <AccordionPanel pb={4} color="gray.600">
+                    <FormattedText text={faq.answer} />
+                  </AccordionPanel>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <Card>
+              <CardBody>
+                <Text color="gray.600" textAlign="center">
+                  No FAQs available at the moment.
+                </Text>
+              </CardBody>
+            </Card>
+          )}
         </Box>
 
         <Divider />
@@ -260,6 +392,110 @@ export const SupportPage = () => {
           </CardBody>
         </Card>
       </VStack>
+
+      {/* Live Chat Modal */}
+      <Modal isOpen={isChatOpen} onClose={handleCloseChat} size="lg">
+        <ModalOverlay />
+        <ModalContent maxH="600px">
+          <ModalHeader>
+            <HStack justify="space-between">
+              <HStack>
+                <Icon as={FiMessageCircle} color="brand.500" />
+                <Text>Live Chat Support</Text>
+              </HStack>
+              <IconButton
+                icon={<FiX />}
+                aria-label="Close chat"
+                size="sm"
+                variant="ghost"
+                onClick={handleCloseChat}
+              />
+            </HStack>
+          </ModalHeader>
+          <ModalBody pb={4}>
+            <VStack align="stretch" spacing={4} height="400px">
+              {/* Messages Container */}
+              <Box
+                flex="1"
+                overflowY="auto"
+                borderWidth="1px"
+                borderRadius="md"
+                p={4}
+                bg="gray.50"
+              >
+                {messages.length === 0 ? (
+                  <VStack spacing={2} py={8}>
+                    <Icon as={FiMessageCircle} boxSize={12} color="gray.400" />
+                    <Text color="gray.600">Start a conversation with our support team</Text>
+                  </VStack>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {messages.map((msg: any) => (
+                      <Flex
+                        key={msg.id}
+                        justify={msg.sender_type === 'customer' ? 'flex-end' : 'flex-start'}
+                      >
+                        <HStack
+                          spacing={2}
+                          maxW="70%"
+                          flexDirection={msg.sender_type === 'customer' ? 'row-reverse' : 'row'}
+                        >
+                          <Avatar
+                            size="sm"
+                            name={msg.sender_name}
+                            bg={msg.sender_type === 'customer' ? 'brand.500' : 'green.500'}
+                          />
+                          <Box
+                            bg={msg.sender_type === 'customer' ? 'brand.500' : 'white'}
+                            color={msg.sender_type === 'customer' ? 'white' : 'black'}
+                            px={4}
+                            py={2}
+                            borderRadius="lg"
+                            boxShadow="sm"
+                          >
+                            <Text fontSize="sm">{msg.message}</Text>
+                            <Text
+                              fontSize="xs"
+                              opacity={0.7}
+                              mt={1}
+                            >
+                              {new Date(msg.created_at).toLocaleTimeString()}
+                            </Text>
+                          </Box>
+                        </HStack>
+                      </Flex>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </VStack>
+                )}
+              </Box>
+
+              {/* Message Input */}
+              <HStack>
+                <Input
+                  placeholder="Type your message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <IconButton
+                  icon={<FiSend />}
+                  aria-label="Send message"
+                  colorScheme="brand"
+                  onClick={handleSendMessage}
+                  isLoading={sendingMessage}
+                  isDisabled={!message.trim()}
+                />
+              </HStack>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Container>
   );
 };

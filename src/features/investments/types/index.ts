@@ -3,7 +3,7 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 export type InvestmentStatus = 'active' | 'matured' | 'liquidated' | 'cancelled';
 
 export interface InvestmentProduct {
-  id: string;
+  product_id: string;
   name: string;
   type: InvestmentType;
   description: string;
@@ -54,18 +54,31 @@ export interface CalculateReturnsRequest {
 }
 
 export interface CalculateReturnsResponse {
-  principal: number;
-  interest_earned: number;
-  total_returns: number;
-  interest_rate: number;
+  product_id: string;
+  amount: number;
   duration_days: number;
-  maturity_date: string;
+  interest_rate: string;
+  expected_returns: string;
+  total_maturity_value: string;
+  effective_annual_rate: string;
+  payout_schedule: Array<{
+    date: string;
+    amount: number;
+    type: string;
+  }>;
+  currency: {
+    code: string;
+    name: string;
+    symbol: string;
+    decimal_places: number;
+    is_crypto: boolean;
+  };
 }
 
 export interface LiquidateInvestmentRequest {
   investment_id: string;
-  wallet_id: string;
-  pin: string;
+  reason?: string;
+  accept_penalty: boolean;
 }
 
 export interface LiquidationResponse {

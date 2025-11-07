@@ -34,11 +34,10 @@ export const investmentsApi = baseApi.injectEndpoints({
     }),
 
     // 3. Calculate Returns
-    calculateReturns: builder.mutation<ApiResponse<CalculateReturnsResponse>, CalculateReturnsRequest>({
-      query: (data) => ({
+    calculateReturns: builder.query<ApiResponse<CalculateReturnsResponse>, CalculateReturnsRequest>({
+      query: (params) => ({
         url: '/investments/calculate',
-        method: 'POST',
-        body: data,
+        params,
       }),
     }),
 
@@ -72,8 +71,8 @@ export const investmentsApi = baseApi.injectEndpoints({
 
     // 7. Liquidate Investment
     liquidateInvestment: builder.mutation<ApiResponse<LiquidationResponse>, LiquidateInvestmentRequest>({
-      query: (data) => ({
-        url: '/investments/liquidate',
+      query: ({ investment_id, ...data }) => ({
+        url: `/investments/investment/${investment_id}/liquidate`,
         method: 'POST',
         body: data,
       }),
@@ -107,7 +106,8 @@ export const investmentsApi = baseApi.injectEndpoints({
 export const {
   useListInvestmentProductsQuery,
   useGetInvestmentProductQuery,
-  useCalculateReturnsMutation,
+  useCalculateReturnsQuery,
+  useLazyCalculateReturnsQuery,
   useCreateInvestmentMutation,
   useListInvestmentsQuery,
   useGetInvestmentQuery,

@@ -59,7 +59,7 @@ import {
   FiClock,
   FiAlertCircle,
 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   useListLoanProductsQuery,
@@ -118,6 +118,11 @@ export const LoansPage = () => {
   const [loanAmount, setLoanAmount] = useState(10000);
   const [loanTenure, setLoanTenure] = useState(3);
   const [repaymentFrequency, setRepaymentFrequency] = useState<string>('monthly');
+  const [processingLoanId, setProcessingLoanId] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const notificationShown = useRef<boolean>(false);
 
   // Modals
   const { isOpen: isApplyOpen, onOpen: onApplyOpen, onClose: onApplyClose } = useDisclosure();
@@ -131,12 +136,16 @@ export const LoansPage = () => {
   const repayForm = useForm<RepaymentForm>();
   const autoRepayForm = useForm<AutoRepaymentForm>();
 
-  // API
+  // API - Enable polling when processing a loan
   const { data: productsData, isLoading: loadingProducts, error: productsError } = useListLoanProductsQuery({});
-  const { data: loansData, isLoading: loadingLoans, error: loansError } = useListLoanApplicationsQuery();
+  const { data: loansData, isLoading: loadingLoans, error: loansError } = useListLoanApplicationsQuery(undefined, {
+    pollingInterval: processingLoanId ? 2000 : 0, // Poll every 2 seconds when processing
+  });
   const { data: walletsData } = useListWalletsQuery();
   const { data: creditScoreData } = useGetCreditScoreQuery();
-  const { data: summaryData } = useGetLoanSummaryQuery();
+  const { data: summaryData } = useGetLoanSummaryQuery(undefined, {
+    pollingInterval: processingLoanId ? 2000 : 0, // Poll summary too for updated balances
+  });
   const [calculateLoan, { isLoading: calculating }] = useCalculateLoanMutation();
   const [createApplication, { isLoading: applying }] = useCreateLoanApplicationMutation();
   const [makeRepayment, { isLoading: repaying }] = useMakeRepaymentMutation();
@@ -148,6 +157,87 @@ export const LoansPage = () => {
   const wallets = walletsData?.data || [];
   const creditScore = creditScoreData?.data;
   const summary = summaryData?.data;
+
+  // Monitor loan processing status
+  useEffect(() => {
+    if (!processingLoanId) return;
+
+    // Find the loan in the list
+    const processingLoan = loans.find((loan: any) => loan.application_id === processingLoanId);
+
+    if (processingLoan) {
+      const status = processingLoan.status;
+
+      // Update progress based on status
+      if (status === 'pending') {
+        // Gradually increase progress while pending
+        if (processingProgress < 40) {
+          const timer = setTimeout(() => {
+            setProcessingProgress(prev => Math.min(prev + 5, 40));
+          }, 1000);
+          return () => clearTimeout(timer);
+        }
+        setProcessingStatus('Processing application...');
+      } else if (status === 'approved') {
+        setProcessingProgress(70);
+        setProcessingStatus('Approved! Disbursing funds...');
+      } else if (status === 'active' || status === 'disbursed') {
+        setProcessingProgress(100);
+        setProcessingStatus('Loan active! Funds disbursed.');
+
+        // Show completion notification only once
+        if (!notificationShown.current) {
+          notificationShown.current = true;
+          toast({
+            title: 'Loan Activated!',
+            description: `Your loan has been approved and funds have been disbursed to your wallet.`,
+            status: 'success',
+            duration: 8000,
+            isClosable: true,
+          });
+        }
+
+        // Clear processing state after a delay
+        setTimeout(() => {
+          setProcessingLoanId(null);
+          setProcessingProgress(0);
+          setProcessingStatus('');
+          notificationShown.current = false; // Reset for next time
+        }, 3000);
+      } else if (status === 'rejected') {
+        setProcessingProgress(100);
+        setProcessingStatus('Application rejected');
+
+        // Show rejection notification only once
+        if (!notificationShown.current) {
+          notificationShown.current = true;
+          toast({
+            title: 'Application Rejected',
+            description: processingLoan.rejection_reason || 'Your loan application was rejected.',
+            status: 'error',
+            duration: 8000,
+            isClosable: true,
+          });
+        }
+
+        setTimeout(() => {
+          setProcessingLoanId(null);
+          setProcessingProgress(0);
+          setProcessingStatus('');
+          notificationShown.current = false; // Reset for next time
+        }, 3000);
+      }
+    }
+  }, [loans, processingLoanId, processingProgress, toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
+    };
+  }, []);
 
   // Handlers
   const handleCalculate = async () => {
@@ -193,7 +283,7 @@ export const LoansPage = () => {
 
   const handleApply = async (data: LoanApplicationForm) => {
     try {
-      await createApplication({
+      const result = await createApplication({
         loan_product_id: data.product_id,
         wallet_id: data.wallet_id,
         requested_amount: Number(data.amount),
@@ -206,9 +296,20 @@ export const LoansPage = () => {
         guarantor_phone: data.guarantor_phone || '',
         guarantor_email: data.guarantor_email || '',
       } as any).unwrap();
+
+      const loanId = result.data?.application_id;
+
+      // Start tracking the loan processing
+      if (loanId) {
+        notificationShown.current = false; // Reset notification flag
+        setProcessingLoanId(loanId);
+        setProcessingProgress(10);
+        setProcessingStatus('pending');
+      }
+
       toast({
         title: 'Application submitted',
-        description: 'Your loan application is being reviewed',
+        description: 'Your loan is being processed automatically',
         status: 'success',
         duration: 5000,
       });
@@ -360,6 +461,55 @@ export const LoansPage = () => {
           </Heading>
           <Text color="gray.600">Access quick loans and manage repayments</Text>
         </Box>
+
+        {/* Processing Progress Card */}
+        {processingLoanId && (
+          <Card bg="blue.50" borderColor="blue.200" borderWidth="2px">
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                <HStack justify="space-between">
+                  <HStack spacing={2}>
+                    <Icon as={FiClock} color="blue.600" boxSize={5} />
+                    <Heading size="sm" color="blue.800">
+                      Processing Your Loan
+                    </Heading>
+                  </HStack>
+                  <Badge colorScheme="blue" fontSize="sm">
+                    {processingProgress}%
+                  </Badge>
+                </HStack>
+
+                <Text fontSize="sm" color="blue.700">
+                  {processingStatus}
+                </Text>
+
+                <Progress
+                  value={processingProgress}
+                  size="lg"
+                  colorScheme="blue"
+                  hasStripe
+                  isAnimated
+                  borderRadius="md"
+                />
+
+                <HStack spacing={4} fontSize="xs" color="blue.600">
+                  <HStack spacing={1}>
+                    <Icon as={processingProgress >= 10 ? FiCheckCircle : FiClock} />
+                    <Text>Submitted</Text>
+                  </HStack>
+                  <HStack spacing={1}>
+                    <Icon as={processingProgress >= 70 ? FiCheckCircle : FiClock} />
+                    <Text>Approved</Text>
+                  </HStack>
+                  <HStack spacing={1}>
+                    <Icon as={processingProgress >= 100 ? FiCheckCircle : FiClock} />
+                    <Text>Disbursed</Text>
+                  </HStack>
+                </HStack>
+              </VStack>
+            </CardBody>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         {summary && (
