@@ -4,6 +4,7 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import storage from 'redux-persist/lib/storage'; // defaults to localStorage
 import { baseApi } from './api/baseApi';
 import authReducer from './slices/authSlice';
+import serverStatusReducer from './slices/serverStatusSlice';
 
 // Persist configuration for auth slice
 const persistConfig = {
@@ -18,6 +19,7 @@ export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     auth: persistedAuthReducer,
+    serverStatus: serverStatusReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

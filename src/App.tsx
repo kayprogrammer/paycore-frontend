@@ -1,7 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@chakra-ui/react';
-import { useAppSelector } from '@/hooks';
+import { useAppSelector, useAppDispatch } from '@/hooks';
+import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { selectIsAuthenticated } from '@/store/slices/authSlice';
+import { selectIsServerAvailable, setServerAvailable } from '@/store/slices/serverStatusSlice';
+import { ServerUnavailable } from '@/components/common/ServerUnavailable';
 
 // Layouts
 import MainLayout from '@/components/layout/MainLayout';
@@ -53,6 +56,22 @@ const PublicRoute = ({ children }: ProtectedRouteProps) => {
 };
 
 function App() {
+  const dispatch = useAppDispatch();
+  const isServerAvailable = useAppSelector(selectIsServerAvailable);
+
+  // Perform health check when app loads
+  useHealthCheck();
+
+  const handleRetry = () => {
+    dispatch(setServerAvailable());
+    window.location.reload();
+  };
+
+  // Show server unavailable screen if server is down
+  if (!isServerAvailable) {
+    return <ServerUnavailable onRetry={handleRetry} />;
+  }
+
   return (
     <Box minH="100vh">
       <Routes>

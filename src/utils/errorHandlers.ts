@@ -81,3 +81,32 @@ export const isInsufficientBalanceError = (error: any): boolean => {
 export const isValidationError = (error: any): boolean => {
   return error?.data?.code === 'invalid_entry';
 };
+
+/**
+ * Checks if the server is unavailable or unreachable
+ * @param error - The error object from RTK Query or Axios
+ * @returns True if the server is unavailable
+ */
+export const isServerUnavailableError = (error: any): boolean => {
+  // Check for network errors (server unreachable)
+  if (error?.message === 'Network Error' || error?.code === 'ERR_NETWORK') {
+    return true;
+  }
+
+  // Check for fetch failed errors (common when server is down)
+  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('fetch failed')) {
+    return true;
+  }
+
+  // Check for specific server error status codes
+  if (error?.status === 503 || error?.status === 502 || error?.status === 504) {
+    return true;
+  }
+
+  // Check for ECONNREFUSED or similar connection errors
+  if (error?.code === 'ECONNREFUSED' || error?.code === 'ENOTFOUND') {
+    return true;
+  }
+
+  return false;
+};

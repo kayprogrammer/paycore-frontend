@@ -1,6 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { ApiResponse } from '@/types/common';
+import { setServerUnavailable } from '@/store/slices/serverStatusSlice';
+import { isServerUnavailableError } from '@/utils/errorHandlers';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -24,6 +26,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   extraOptions
 ) => {
   let result = await baseQuery(args, api, extraOptions);
+
+  // Check if server is unavailable (network errors, 502, 503, 504, etc.)
+  if (result.error && isServerUnavailableError(result.error)) {
+    api.dispatch(setServerUnavailable());
+    return result;
+  }
 
   if (result.error && result.error.status === 401) {
     // Try to refresh the token

@@ -2,6 +2,13 @@
 
 A comprehensive, production-ready fintech platform frontend built with React, TypeScript, Vite, Chakra UI, and Redux Toolkit.
 
+> **⚠️ Important Notice**: The live backend server will be discontinued on **February 14th, 2026** due to hosting costs. This is a demonstration project. The frontend will gracefully display a friendly error message when the server becomes unreachable. You can run both projects locally following the setup instructions.
+
+## 🔗 Related Projects
+
+- **Backend API**: [kayprogrammer/paycore-api-1](https://github.com/kayprogrammer/paycore-api-1)
+- **Live Demo**: [https://paycore-fe.netlify.app](https://paycore-fe.netlify.app)
+
 ## 🚀 Features
 
 PayCore is a complete financial services platform that consumes **137 API endpoints** across **13 modules**:
@@ -309,6 +316,48 @@ brand: {
 - **Real-time Updates** → Avatar and profile changes reflect immediately
 - **Redux Persistence** → Auth state persists across page reloads
 
+## 🚨 Server Unavailability Handling
+
+When the backend server is unreachable (discontinued, network issues, etc.), the app displays a friendly error screen instead of confusing error messages.
+
+### How It Works
+
+1. **Health Check on Load** → App checks server availability when it loads (5-second timeout)
+2. **Server Unreachable** → Shows friendly screen with crying emoji 😢 immediately
+3. **Server Available** → App loads normally
+4. **Backup Detection** → If server goes down during usage, also caught by API interceptor
+
+### User Experience
+
+Instead of seeing:
+```
+❌ Google Login Failed
+❌ Could not sign in with Google
+❌ CORS errors in console
+```
+
+Users see:
+```
+😢
+Server Unavailable
+
+The PayCore API server has been stopped and is now unreachable.
+This was a demonstration project hosted on a paid server.
+The live server was discontinued on February 14th, 2026.
+
+[Try Again Button]
+[View Backend Repository Button]
+
+You can run the project locally by following the setup instructions in the repository.
+```
+
+### Implementation
+
+- **Health Check Hook**: `src/hooks/useHealthCheck.ts` - Runs on app load
+- **Error Detection**: `src/utils/errorHandlers.ts` - Detects network/server errors
+- **UI Component**: `src/components/common/ServerUnavailable.tsx` - Friendly error screen
+- **Redux State**: `src/store/slices/serverStatusSlice.ts` - Tracks server status
+
 ## 📊 State Management
 
 ### Redux Store Structure
@@ -321,6 +370,10 @@ brand: {
     accessToken: string | null,
     refreshToken: string | null,
     isAuthenticated: boolean,
+  },
+  serverStatus: {
+    isServerAvailable: boolean,
+    lastChecked: number | null,
   }
 }
 ```
@@ -575,6 +628,14 @@ netlify deploy --prod --dir=dist
 # Or
 make deploy-netlify
 ```
+
+**Important for Netlify**: The project includes a `_redirects` file in the `public/` folder and `netlify.toml` at the root to handle SPA routing. This ensures that direct URL access (like `/dashboard`, `/login`) works correctly by serving `index.html` for all routes.
+
+**Files for Netlify:**
+- `public/_redirects` - Redirect configuration
+- `netlify.toml` - Netlify configuration (alternative to `_redirects`)
+
+If you encounter 404 errors when accessing routes directly, ensure these files are committed to your repository.
 
 #### AWS S3 + CloudFront
 ```bash

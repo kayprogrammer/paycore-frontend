@@ -8,6 +8,7 @@ import {
 import { useGoogleOAuthMutation } from '@/features/auth/services/authApi';
 import { useLazyGetProfileQuery } from '@/features/profile/services/profileApi';
 import { useAppDispatch } from '@/hooks';
+import { useServerAvailability } from '@/hooks/useServerAvailability';
 import { setCredentials } from '@/store/slices/authSlice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
@@ -15,6 +16,7 @@ export const RegisterPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const dispatch = useAppDispatch();
+  const { checkServerAvailability } = useServerAvailability();
 
   const [googleOAuth, { isLoading: isGoogleLoading }] = useGoogleOAuthMutation();
   const [getProfile] = useLazyGetProfileQuery();
@@ -86,6 +88,13 @@ export const RegisterPage = () => {
       }
     } catch (error: any) {
       console.error('Google Sign-Up Error:', error);
+
+      // Check if server is unavailable - if so, show the friendly error screen
+      if (checkServerAvailability(error)) {
+        return; // Don't show toast, the ServerUnavailable component will be shown
+      }
+
+      // Show regular error toast for other errors
       toast({
         title: 'Google Sign-Up Failed',
         description: error?.data?.message || error?.message || 'Could not sign up with Google',
