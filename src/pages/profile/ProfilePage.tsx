@@ -127,7 +127,7 @@ export const ProfilePage = () => {
 
   // KYC countdown state
   const [showKYCCountdown, setShowKYCCountdown] = useState(false);
-  const [kycCountdown, setKycCountdown] = useState(15);
+  const [kycCountdown, setKycCountdown] = useState(35);
   const [kycProgress, setKycProgress] = useState(0);
 
   const profile = profileData?.data;
@@ -139,14 +139,14 @@ export const ProfilePage = () => {
     if (showKYCCountdown && kycCountdown > 0) {
       const timer = setTimeout(() => {
         setKycCountdown(kycCountdown - 1);
-        setKycProgress(((15 - kycCountdown + 1) / 15) * 100);
+        setKycProgress(((35 - kycCountdown + 1) / 35) * 100);
       }, 1000);
       return () => clearTimeout(timer);
     } else if (showKYCCountdown && kycCountdown === 0) {
       // Reload profile data after countdown
       refetchProfile();
       setShowKYCCountdown(false);
-      setKycCountdown(15);
+      setKycCountdown(35);
       setKycProgress(0);
       toast({
         title: 'KYC Verification Complete',
@@ -230,7 +230,7 @@ export const ProfilePage = () => {
       await submitKYC(formData).unwrap();
       toast({
         title: 'KYC submitted successfully',
-        description: 'Your verification will be processed in 15 seconds',
+        description: 'Your verification will be processed in 35 seconds',
         status: 'success',
         duration: 5000,
       });
@@ -239,7 +239,7 @@ export const ProfilePage = () => {
 
       // Start countdown timer
       setShowKYCCountdown(true);
-      setKycCountdown(15);
+      setKycCountdown(35);
       setKycProgress(0);
     } catch (error: any) {
       handleApiError(error, kycForm.setError, toast);
