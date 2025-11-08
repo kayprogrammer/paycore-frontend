@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Heading,
   Text,
@@ -14,9 +14,14 @@ import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const dispatch = useAppDispatch();
   const { checkServerAvailability } = useServerAvailability();
+
+  // Get return URL from query parameter 'next' or default to dashboard
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('next') || '/dashboard';
 
   const [googleOAuth, { isLoading: isGoogleLoading }] = useGoogleOAuthMutation();
   const [getProfile] = useLazyGetProfileQuery();
@@ -82,7 +87,8 @@ export const RegisterPage = () => {
           duration: 3000,
         });
 
-        navigate('/dashboard');
+        // Navigate to return URL or dashboard
+        navigate(returnUrl);
       } else {
         throw new Error('No profile data in response');
       }

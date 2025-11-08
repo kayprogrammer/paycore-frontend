@@ -5,6 +5,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Card,
   CardBody,
   Button,
@@ -204,50 +205,50 @@ export const InvestmentsPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
-        <HStack justify="space-between">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }}>
+      <VStack spacing={{ base: 4, md: 8 }} align="stretch">
+        <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" spacing={{ base: 3, md: 0 }}>
           <Box>
-            <Heading size="lg" mb={2}>Investments</Heading>
-            <Text color="gray.600">Grow your wealth with our investment products</Text>
+            <Heading size={{ base: 'md', md: 'lg' }} mb={2}>Investments</Heading>
+            <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.600">Grow your wealth with our investment products</Text>
           </Box>
-        </HStack>
+        </Stack>
 
         {portfolio && (
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={{ base: 4, md: 6 }}>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Total Invested</StatLabel>
-                  <StatNumber fontSize="xl">{formatCurrency(portfolio.total_invested, 'NGN')}</StatNumber>
-                  <StatHelpText>{portfolio.total_investments} investments</StatHelpText>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Total Invested</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }}>{formatCurrency(portfolio.total_invested, 'NGN')}</StatNumber>
+                  <StatHelpText fontSize={{ base: 'xs', md: 'sm' }}>{portfolio.total_investments} investments</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Expected Returns</StatLabel>
-                  <StatNumber fontSize="xl" color="green.600">{formatCurrency(portfolio.total_returns, 'NGN')}</StatNumber>
-                  <StatHelpText>{portfolio.average_return_rate}% avg rate</StatHelpText>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Expected Returns</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }} color="green.600">{formatCurrency(portfolio.total_returns, 'NGN')}</StatNumber>
+                  <StatHelpText fontSize={{ base: 'xs', md: 'sm' }}>{portfolio.average_return_rate}% avg rate</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Active Investments</StatLabel>
-                  <StatNumber>{portfolio.active_investments}</StatNumber>
-                  <StatHelpText>Currently running</StatHelpText>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Active Investments</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }}>{portfolio.active_investments}</StatNumber>
+                  <StatHelpText fontSize={{ base: 'xs', md: 'sm' }}>Currently running</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Matured</StatLabel>
-                  <StatNumber>{portfolio.matured_investments}</StatNumber>
-                  <StatHelpText>Completed</StatHelpText>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Matured</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }}>{portfolio.matured_investments}</StatNumber>
+                  <StatHelpText fontSize={{ base: 'xs', md: 'sm' }}>Completed</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
@@ -256,56 +257,56 @@ export const InvestmentsPage = () => {
 
         <Tabs>
           <TabList>
-            <Tab>Investment Products</Tab>
-            <Tab>My Investments</Tab>
-            <Tab>Portfolio</Tab>
+            <Tab fontSize={{ base: 'sm', md: 'md' }}>Investment Products</Tab>
+            <Tab fontSize={{ base: 'sm', md: 'md' }}>My Investments</Tab>
+            <Tab fontSize={{ base: 'sm', md: 'md' }}>Portfolio</Tab>
           </TabList>
 
           <TabPanels>
             <TabPanel px={0}>
               {loadingProducts ? (
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={{ base: 4, md: 6 }}>
                   {[1, 2, 3].map((i) => <Skeleton key={i} height="250px" />)}
                 </SimpleGrid>
               ) : (
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={{ base: 4, md: 6 }}>
                   {products.map((product: any) => (
                     <Card key={product.product_id} _hover={{ shadow: 'lg' }}>
                       <CardBody>
-                        <VStack align="stretch" spacing={4}>
-                          <HStack justify="space-between">
-                            <Heading size="md">{product.name}</Heading>
-                            <Badge colorScheme={RISK_COLORS[product.risk_level as keyof typeof RISK_COLORS]}>
+                        <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
+                          <Stack direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} spacing={{ base: 2, sm: 0 }}>
+                            <Heading size={{ base: 'sm', md: 'md' }}>{product.name}</Heading>
+                            <Badge colorScheme={RISK_COLORS[product.risk_level as keyof typeof RISK_COLORS]} fontSize={{ base: 'xs', md: 'sm' }}>
                               {product.risk_level} risk
                             </Badge>
-                          </HStack>
-                          <Text fontSize="sm" color="gray.600" noOfLines={2}>{product.description}</Text>
+                          </Stack>
+                          <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" noOfLines={2}>{product.description}</Text>
                           <VStack align="stretch" spacing={2}>
-                            <HStack justify="space-between" fontSize="sm">
+                            <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                               <Text color="gray.600">Minimum Amount</Text>
                               <Text fontWeight="600">{formatCurrency(product.min_amount, 'NGN')}</Text>
                             </HStack>
-                            <HStack justify="space-between" fontSize="sm">
+                            <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                               <Text color="gray.600">Return Rate</Text>
                               <Text fontWeight="600" color="green.600">{product.return_rate}% p.a.</Text>
                             </HStack>
-                            <HStack justify="space-between" fontSize="sm">
+                            <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                               <Text color="gray.600">Duration</Text>
                               <Text fontWeight="600">{product.duration_months} months</Text>
                             </HStack>
                           </VStack>
-                          <HStack spacing={2}>
-                            <Button size="sm" variant="outline" flex={1} onClick={() => {
+                          <Stack direction={{ base: 'column', sm: 'row' }} spacing={2}>
+                            <Button size={{ base: 'xs', md: 'sm' }} variant="outline" flex={1} onClick={() => {
                               setSelectedProduct(product);
                               setInvestAmount(product.min_amount);
                               onCalculatorOpen();
                             }}>Calculate</Button>
-                            <Button size="sm" colorScheme="brand" flex={1} onClick={() => {
+                            <Button size={{ base: 'xs', md: 'sm' }} colorScheme="brand" flex={1} onClick={() => {
                               setSelectedProduct(product);
                               investForm.setValue('product_id', product.product_id);
                               onInvestOpen();
                             }}>Invest Now</Button>
-                          </HStack>
+                          </Stack>
                         </VStack>
                       </CardBody>
                     </Card>
@@ -318,46 +319,46 @@ export const InvestmentsPage = () => {
               {loadingInvestments ? (
                 <LoadingSpinner />
               ) : investments.length > 0 ? (
-                <VStack spacing={4} align="stretch">
+                <VStack spacing={{ base: 3, md: 4 }} align="stretch">
                   {investments.map((inv: any) => (
                     <Card key={inv.investment_id}>
                       <CardBody>
-                        <VStack align="stretch" spacing={4}>
-                          <HStack justify="space-between">
+                        <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
+                          <Stack direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} spacing={{ base: 2, sm: 0 }}>
                             <VStack align="start" spacing={1}>
-                              <Heading size="sm">{inv.product_name}</Heading>
-                              <Text fontSize="sm" color="gray.600">
+                              <Heading size={{ base: 'xs', md: 'sm' }}>{inv.product_name}</Heading>
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">
                                 {inv.product_type} • {inv.days_to_maturity} days to maturity
                               </Text>
                             </VStack>
-                            <Badge colorScheme={getStatusColor(inv.status)} fontSize="sm" px={3} py={1}>
+                            <Badge colorScheme={getStatusColor(inv.status)} fontSize={{ base: 'xs', md: 'sm' }} px={3} py={1}>
                               {inv.status}
                             </Badge>
-                          </HStack>
-                          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                          </Stack>
+                          <SimpleGrid columns={{ base: 2, sm: 2, md: 4 }} spacing={{ base: 3, md: 4 }}>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>Principal</Text>
-                              <Text fontWeight="600">
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>
                                 {formatCurrency(Number(inv.principal_amount), inv.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>Expected Returns</Text>
-                              <Text fontWeight="600" color="green.600">
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }} color="green.600">
                                 {formatCurrency(Number(inv.expected_returns), inv.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>Maturity Date</Text>
-                              <Text fontWeight="600">{formatDate(inv.maturity_date)}</Text>
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>{formatDate(inv.maturity_date)}</Text>
                             </Box>
                             <Box>
                               <Text fontSize="xs" color="gray.600" mb={1}>Days to Maturity</Text>
-                              <Text fontWeight="600">{inv.days_to_maturity} days</Text>
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>{inv.days_to_maturity} days</Text>
                             </Box>
                           </SimpleGrid>
                           {inv.status === 'active' && (
-                            <Button size="sm" colorScheme="red" variant="outline" onClick={() => {
+                            <Button size={{ base: 'xs', md: 'sm' }} colorScheme="red" variant="outline" onClick={() => {
                               setLiquidateId(inv.investment_id);
                               onLiquidateOpen();
                             }}>
@@ -375,10 +376,10 @@ export const InvestmentsPage = () => {
             </TabPanel>
 
             <TabPanel px={0}>
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+              <SimpleGrid columns={{ base: 1, sm: 1, lg: 2 }} spacing={{ base: 4, md: 6 }}>
                 <Card>
                   <CardBody>
-                    <Heading size="sm" mb={4}>Portfolio Distribution</Heading>
+                    <Heading size={{ base: 'xs', md: 'sm' }} mb={4}>Portfolio Distribution</Heading>
                     {portfolioDistribution.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
@@ -398,7 +399,7 @@ export const InvestmentsPage = () => {
                 </Card>
                 <Card>
                   <CardBody>
-                    <Heading size="sm" mb={4}>Investment Performance</Heading>
+                    <Heading size={{ base: 'xs', md: 'sm' }} mb={4}>Investment Performance</Heading>
                     {investments.length > 0 ? (
                       <VStack align="stretch" spacing={3}>
                         {investments.slice(0, 5).map((inv: any) => {
@@ -408,8 +409,8 @@ export const InvestmentsPage = () => {
                           return (
                             <Box key={inv.investment_id}>
                               <HStack justify="space-between" mb={1}>
-                                <Text fontSize="sm">{inv.product_name}</Text>
-                                <Text fontSize="sm" fontWeight="600">{returnRate}%</Text>
+                                <Text fontSize={{ base: 'xs', md: 'sm' }}>{inv.product_name}</Text>
+                                <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="600">{returnRate}%</Text>
                               </HStack>
                               <Progress value={Number(returnRate)} max={100} colorScheme="green" size="sm" borderRadius="full" />
                             </Box>
@@ -428,41 +429,41 @@ export const InvestmentsPage = () => {
       </VStack>
 
       {/* Calculator Modal */}
-      <Modal isOpen={isCalculatorOpen} onClose={onCalculatorClose} size="lg">
+      <Modal isOpen={isCalculatorOpen} onClose={onCalculatorClose} size={{ base: 'full', md: 'lg' }}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Returns Calculator</ModalHeader>
+          <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Returns Calculator</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <VStack spacing={6} align="stretch">
+            <VStack spacing={{ base: 4, md: 6 }} align="stretch">
               <FormControl>
-                <FormLabel>Investment Amount: {formatCurrency(investAmount, 'NGN')}</FormLabel>
+                <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Investment Amount: {formatCurrency(investAmount, 'NGN')}</FormLabel>
                 <Slider value={investAmount} onChange={setInvestAmount}
                   min={Number(selectedProduct?.min_amount) || 1000} max={Number(selectedProduct?.max_amount) || 1000000} step={1000}>
                   <SliderTrack><SliderFilledTrack bg="brand.500" /></SliderTrack>
-                  <SliderThumb boxSize={6} />
+                  <SliderThumb boxSize={{ base: 5, md: 6 }} />
                 </Slider>
               </FormControl>
-              <Button onClick={handleCalculate} isLoading={calculating} colorScheme="brand">Calculate Returns</Button>
+              <Button onClick={handleCalculate} isLoading={calculating} colorScheme="brand" size={{ base: 'sm', md: 'md' }}>Calculate Returns</Button>
               {calculatedReturns && (
                 <Card bg="brand.50">
                   <CardBody>
                     <VStack align="stretch" spacing={3}>
-                      <Heading size="sm">Projected Returns</Heading>
+                      <Heading size={{ base: 'xs', md: 'sm' }}>Projected Returns</Heading>
                       <HStack justify="space-between">
-                        <Text color="gray.600">Principal</Text>
-                        <Text fontWeight="600">{formatCurrency(Number(calculatedReturns.amount), 'NGN')}</Text>
+                        <Text color="gray.600" fontSize={{ base: 'sm', md: 'md' }}>Principal</Text>
+                        <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>{formatCurrency(Number(calculatedReturns.amount), 'NGN')}</Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text color="gray.600">Returns ({calculatedReturns.interest_rate}%)</Text>
-                        <Text fontWeight="600" color="green.600">
+                        <Text color="gray.600" fontSize={{ base: 'sm', md: 'md' }}>Returns ({calculatedReturns.interest_rate}%)</Text>
+                        <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }} color="green.600">
                           {formatCurrency(Number(calculatedReturns.expected_returns), 'NGN')}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontWeight="600">Total at Maturity</Text>
-                        <Text fontWeight="bold" fontSize="lg" color="brand.600">
+                        <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>Total at Maturity</Text>
+                        <Text fontWeight="bold" fontSize={{ base: 'md', md: 'lg' }} color="brand.600">
                           {formatCurrency(Number(calculatedReturns.total_maturity_value), 'NGN')}
                         </Text>
                       </HStack>
@@ -473,35 +474,35 @@ export const InvestmentsPage = () => {
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onCalculatorClose}>Close</Button>
+            <Button variant="ghost" mr={3} onClick={onCalculatorClose} size={{ base: 'sm', md: 'md' }}>Close</Button>
             <Button colorScheme="brand" onClick={() => {
               onCalculatorClose();
               setSelectedProduct(selectedProduct);
               investForm.setValue('product_id', selectedProduct.product_id);
               onInvestOpen();
-            }}>Invest Now</Button>
+            }} size={{ base: 'sm', md: 'md' }}>Invest Now</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
       {/* Investment Modal */}
-      <Modal isOpen={isInvestOpen} onClose={onInvestClose}>
+      <Modal isOpen={isInvestOpen} onClose={onInvestClose} size={{ base: 'full', md: 'md' }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={investForm.handleSubmit(handleInvest)}>
-            <ModalHeader>Make Investment</ModalHeader>
+            <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Make Investment</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
-              <VStack spacing={4}>
+              <VStack spacing={{ base: 3, md: 4 }}>
                 <FormControl isRequired>
-                  <FormLabel>Amount</FormLabel>
-                  <NumberInput min={Number(selectedProduct?.min_amount)} max={Number(selectedProduct?.max_amount)}>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Amount</FormLabel>
+                  <NumberInput min={Number(selectedProduct?.min_amount)} max={Number(selectedProduct?.max_amount)} size={{ base: 'sm', md: 'md' }}>
                     <NumberInputField {...investForm.register('amount', { valueAsNumber: true })} placeholder="0.00" />
                   </NumberInput>
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Source Wallet</FormLabel>
-                  <Select {...investForm.register('wallet_id')} placeholder="Select wallet">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Source Wallet</FormLabel>
+                  <Select {...investForm.register('wallet_id')} placeholder="Select wallet" size={{ base: 'sm', md: 'md' }}>
                     {wallets.map((wallet: any) => (
                       <option key={wallet.wallet_id} value={wallet.wallet_id}>
                         {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
@@ -510,14 +511,14 @@ export const InvestmentsPage = () => {
                   </Select>
                 </FormControl>
                 <FormControl isRequired>
-                  <FormLabel>Wallet PIN</FormLabel>
-                  <Input type="password" maxLength={4} {...investForm.register('pin')} placeholder="Enter PIN" />
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Wallet PIN</FormLabel>
+                  <Input type="password" maxLength={4} {...investForm.register('pin')} placeholder="Enter PIN" size={{ base: 'sm', md: 'md' }} />
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onInvestClose}>Cancel</Button>
-              <Button colorScheme="brand" type="submit" isLoading={investing}>Invest Now</Button>
+              <Button variant="ghost" mr={3} onClick={onInvestClose} size={{ base: 'sm', md: 'md' }}>Cancel</Button>
+              <Button colorScheme="brand" type="submit" isLoading={investing} size={{ base: 'sm', md: 'md' }}>Invest Now</Button>
             </ModalFooter>
           </form>
         </ModalContent>
@@ -526,14 +527,14 @@ export const InvestmentsPage = () => {
       {/* Liquidate Confirmation */}
       <AlertDialog isOpen={isLiquidateOpen} leastDestructiveRef={cancelRef} onClose={onLiquidateClose}>
         <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader>Liquidate Investment</AlertDialogHeader>
-            <AlertDialogBody>
+          <AlertDialogContent mx={{ base: 4, md: 0 }}>
+            <AlertDialogHeader fontSize={{ base: 'md', md: 'lg' }}>Liquidate Investment</AlertDialogHeader>
+            <AlertDialogBody fontSize={{ base: 'sm', md: 'md' }}>
               Early liquidation may result in penalties. Are you sure you want to proceed?
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onLiquidateClose}>Cancel</Button>
-              <Button colorScheme="red" onClick={handleLiquidate} ml={3} isLoading={liquidating}>
+              <Button ref={cancelRef} onClick={onLiquidateClose} size={{ base: 'sm', md: 'md' }}>Cancel</Button>
+              <Button colorScheme="red" onClick={handleLiquidate} ml={3} isLoading={liquidating} size={{ base: 'sm', md: 'md' }}>
                 Liquidate
               </Button>
             </AlertDialogFooter>

@@ -197,14 +197,14 @@ export const TicketsPage = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 4, md: 8 }} align="stretch">
         {/* Header */}
         <Box>
-          <Heading size="lg" mb={2}>
+          <Heading size={{ base: "md", md: "lg" }} mb={2}>
             Support Tickets
           </Heading>
-          <Text color="gray.600">
+          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
             View and manage your support tickets
           </Text>
         </Box>
@@ -212,21 +212,20 @@ export const TicketsPage = () => {
         {/* Filters */}
         <Card>
           <CardBody>
-            <HStack spacing={4}>
-              <Box flex="1">
-                <Select
-                  placeholder="All Statuses"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="waiting_for_customer">Waiting for Customer</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="closed">Closed</option>
-                </Select>
-              </Box>
-            </HStack>
+            <Box width="100%">
+              <Select
+                placeholder="All Statuses"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                size={{ base: "sm", md: "md" }}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="waiting_for_customer">Waiting for Customer</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </Select>
+            </Box>
           </CardBody>
         </Card>
 
@@ -243,60 +242,130 @@ export const TicketsPage = () => {
                 ))}
               </VStack>
             ) : tickets.length > 0 ? (
-              <Table variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>Subject</Th>
-                    <Th>Category</Th>
-                    <Th>Status</Th>
-                    <Th>Priority</Th>
-                    <Th>Created</Th>
-                    <Th>Action</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
+              <>
+                {/* Desktop Table View */}
+                <Box display={{ base: "none", lg: "block" }}>
+                  <Table variant="simple">
+                    <Thead>
+                      <Tr>
+                        <Th>Subject</Th>
+                        <Th>Category</Th>
+                        <Th>Status</Th>
+                        <Th>Priority</Th>
+                        <Th>Created</Th>
+                        <Th>Action</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {tickets.map((ticket: any) => (
+                        <Tr key={ticket.ticket_id}>
+                          <Td>
+                            <VStack align="start" spacing={0}>
+                              <Text fontWeight="600">{ticket.subject}</Text>
+                              <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                                {ticket.description}
+                              </Text>
+                            </VStack>
+                          </Td>
+                          <Td>
+                            <Badge colorScheme="purple" textTransform="capitalize">
+                              {ticket.category?.replace(/_/g, ' ')}
+                            </Badge>
+                          </Td>
+                          <Td>
+                            <Badge colorScheme={getStatusColor(ticket.status)}>
+                              {ticket.status?.replace(/_/g, ' ')}
+                            </Badge>
+                          </Td>
+                          <Td>
+                            <Badge colorScheme={getPriorityColor(ticket.priority)}>
+                              {ticket.priority}
+                            </Badge>
+                          </Td>
+                          <Td fontSize="sm" color="gray.600">
+                            {formatRelativeTime(ticket.created_at)}
+                          </Td>
+                          <Td>
+                            <Button
+                              size="sm"
+                              colorScheme="brand"
+                              variant="ghost"
+                              onClick={() => handleViewTicket(ticket.ticket_id)}
+                            >
+                              View
+                            </Button>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+
+                {/* Mobile Card View */}
+                <VStack spacing={3} display={{ base: "flex", lg: "none" }} align="stretch">
                   {tickets.map((ticket: any) => (
-                    <Tr key={ticket.ticket_id}>
-                      <Td>
-                        <VStack align="start" spacing={0}>
-                          <Text fontWeight="600">{ticket.subject}</Text>
-                          <Text fontSize="sm" color="gray.600" noOfLines={1}>
-                            {ticket.description}
-                          </Text>
+                    <Card
+                      key={ticket.ticket_id}
+                      variant="outline"
+                      cursor="pointer"
+                      onClick={() => handleViewTicket(ticket.ticket_id)}
+                      _hover={{ borderColor: "brand.500", shadow: "sm" }}
+                    >
+                      <CardBody p={4}>
+                        <VStack align="stretch" spacing={3}>
+                          <Box>
+                            <Text fontWeight="600" fontSize="sm" mb={1} noOfLines={2}>
+                              {ticket.subject}
+                            </Text>
+                            <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                              {ticket.description}
+                            </Text>
+                          </Box>
+
+                          <Flex gap={2} flexWrap="wrap">
+                            <Badge
+                              colorScheme={getStatusColor(ticket.status)}
+                              fontSize="2xs"
+                            >
+                              {ticket.status?.replace(/_/g, ' ')}
+                            </Badge>
+                            <Badge
+                              colorScheme={getPriorityColor(ticket.priority)}
+                              fontSize="2xs"
+                            >
+                              {ticket.priority}
+                            </Badge>
+                            <Badge
+                              colorScheme="purple"
+                              textTransform="capitalize"
+                              fontSize="2xs"
+                            >
+                              {ticket.category?.replace(/_/g, ' ')}
+                            </Badge>
+                          </Flex>
+
+                          <HStack justify="space-between" align="center">
+                            <Text fontSize="2xs" color="gray.600">
+                              {formatRelativeTime(ticket.created_at)}
+                            </Text>
+                            <Button
+                              size="xs"
+                              colorScheme="brand"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewTicket(ticket.ticket_id);
+                              }}
+                            >
+                              View
+                            </Button>
+                          </HStack>
                         </VStack>
-                      </Td>
-                      <Td>
-                        <Badge colorScheme="purple" textTransform="capitalize">
-                          {ticket.category?.replace(/_/g, ' ')}
-                        </Badge>
-                      </Td>
-                      <Td>
-                        <Badge colorScheme={getStatusColor(ticket.status)}>
-                          {ticket.status?.replace(/_/g, ' ')}
-                        </Badge>
-                      </Td>
-                      <Td>
-                        <Badge colorScheme={getPriorityColor(ticket.priority)}>
-                          {ticket.priority}
-                        </Badge>
-                      </Td>
-                      <Td fontSize="sm" color="gray.600">
-                        {formatRelativeTime(ticket.created_at)}
-                      </Td>
-                      <Td>
-                        <Button
-                          size="sm"
-                          colorScheme="brand"
-                          variant="ghost"
-                          onClick={() => handleViewTicket(ticket.ticket_id)}
-                        >
-                          View
-                        </Button>
-                      </Td>
-                    </Tr>
+                      </CardBody>
+                    </Card>
                   ))}
-                </Tbody>
-              </Table>
+                </VStack>
+              </>
             ) : (
               <EmptyState
                 icon={FiMessageCircle}
@@ -309,49 +378,72 @@ export const TicketsPage = () => {
       </VStack>
 
       {/* Ticket Details Modal */}
-      <Modal isOpen={isTicketOpen} onClose={handleCloseTicketModal} size="xl">
+      <Modal
+        isOpen={isTicketOpen}
+        onClose={handleCloseTicketModal}
+        size={{ base: "full", md: "xl" }}
+        scrollBehavior="inside"
+      >
         <ModalOverlay />
-        <ModalContent maxH="700px">
-          <ModalHeader>
+        <ModalContent
+          maxH={{ base: "100vh", md: "90vh" }}
+          my={{ base: 0, md: 4 }}
+        >
+          <ModalHeader pb={2}>
             <VStack align="stretch" spacing={2}>
               <HStack justify="space-between">
-                <HStack>
-                  <FiMessageCircle />
-                  <Text>Ticket Details</Text>
+                <HStack spacing={2}>
+                  <Box display={{ base: "none", md: "block" }}>
+                    <FiMessageCircle />
+                  </Box>
+                  <Text fontSize={{ base: "md", md: "lg" }}>Ticket Details</Text>
                 </HStack>
-                <IconButton
-                  icon={<FiX />}
-                  aria-label="Close"
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCloseTicketModal}
-                />
+                <ModalCloseButton position="relative" top={0} right={0} />
               </HStack>
               {selectedTicket && (
                 <Box>
-                  <Text fontSize="lg" fontWeight="600">
+                  <Text fontSize={{ base: "md", md: "lg" }} fontWeight="600" noOfLines={2}>
                     {selectedTicket.subject}
                   </Text>
-                  <HStack spacing={2} mt={2}>
-                    <Badge colorScheme={getStatusColor(selectedTicket.status)}>
+                  <Flex
+                    gap={2}
+                    mt={2}
+                    flexWrap="wrap"
+                    align="center"
+                  >
+                    <Badge
+                      colorScheme={getStatusColor(selectedTicket.status)}
+                      fontSize={{ base: "2xs", md: "xs" }}
+                    >
                       {selectedTicket.status?.replace(/_/g, ' ')}
                     </Badge>
-                    <Badge colorScheme={getPriorityColor(selectedTicket.priority)}>
+                    <Badge
+                      colorScheme={getPriorityColor(selectedTicket.priority)}
+                      fontSize={{ base: "2xs", md: "xs" }}
+                    >
                       {selectedTicket.priority}
                     </Badge>
-                    <Badge colorScheme="purple" textTransform="capitalize">
+                    <Badge
+                      colorScheme="purple"
+                      textTransform="capitalize"
+                      fontSize={{ base: "2xs", md: "xs" }}
+                    >
                       {selectedTicket.category?.replace(/_/g, ' ')}
                     </Badge>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize={{ base: "2xs", md: "sm" }} color="gray.600">
                       Created {formatRelativeTime(selectedTicket.created_at)}
                     </Text>
-                  </HStack>
+                  </Flex>
                 </Box>
               )}
             </VStack>
           </ModalHeader>
           <ModalBody pb={4}>
-            <VStack align="stretch" spacing={4} height="450px">
+            <VStack
+              align="stretch"
+              spacing={4}
+              height={{ base: "calc(100vh - 250px)", md: "450px" }}
+            >
               {/* Messages Container */}
               <Box
                 flex="1"
@@ -378,24 +470,26 @@ export const TicketsPage = () => {
                         >
                           <HStack
                             spacing={2}
-                            maxW="70%"
+                            maxW={{ base: "85%", md: "70%" }}
                             flexDirection={isCustomer ? 'row-reverse' : 'row'}
+                            align="flex-end"
                           >
                             <Avatar
-                              size="sm"
+                              size={{ base: "xs", md: "sm" }}
                               name={msg.sender_email}
                               bg={isCustomer ? 'brand.500' : 'green.500'}
                             />
                             <Box
                               bg={isCustomer ? 'brand.500' : 'white'}
                               color={isCustomer ? 'white' : 'black'}
-                              px={4}
-                              py={2}
+                              px={{ base: 3, md: 4 }}
+                              py={{ base: 2, md: 2 }}
                               borderRadius="lg"
                               boxShadow="sm"
+                              wordBreak="break-word"
                             >
-                              <Text fontSize="sm">{msg.message}</Text>
-                              <Text fontSize="xs" opacity={0.7} mt={1}>
+                              <Text fontSize={{ base: "xs", md: "sm" }}>{msg.message}</Text>
+                              <Text fontSize={{ base: "2xs", md: "xs" }} opacity={0.7} mt={1}>
                                 {new Date(msg.created_at).toLocaleTimeString()}
                               </Text>
                             </Box>
@@ -411,7 +505,7 @@ export const TicketsPage = () => {
               {/* Message Input - Only show if ticket is not closed */}
               {selectedTicket?.status !== 'closed' && selectedTicket?.status !== 'resolved' ? (
                 <VStack spacing={2}>
-                  <HStack width="100%">
+                  <HStack width="100%" spacing={{ base: 2, md: 3 }}>
                     <Input
                       placeholder="Type your message..."
                       value={message}
@@ -423,6 +517,8 @@ export const TicketsPage = () => {
                         }
                       }}
                       disabled={sendingMessage}
+                      size={{ base: "sm", md: "md" }}
+                      fontSize={{ base: "sm", md: "md" }}
                     />
                     <IconButton
                       icon={<FiSend />}
@@ -431,11 +527,13 @@ export const TicketsPage = () => {
                       onClick={handleSendMessage}
                       isLoading={sendingMessage}
                       isDisabled={!message.trim() || sendingMessage}
+                      size={{ base: "sm", md: "md" }}
+                      flexShrink={0}
                     />
                   </HStack>
                   <HStack width="100%" justify="flex-end">
                     <Button
-                      size="sm"
+                      size={{ base: "xs", md: "sm" }}
                       variant="outline"
                       colorScheme="red"
                       onClick={handleCloseTicket}
@@ -447,12 +545,12 @@ export const TicketsPage = () => {
                 </VStack>
               ) : (
                 <Box
-                  p={4}
+                  p={{ base: 3, md: 4 }}
                   bg="gray.100"
                   borderRadius="md"
                   textAlign="center"
                 >
-                  <Text color="gray.600" fontSize="sm">
+                  <Text color="gray.600" fontSize={{ base: "xs", md: "sm" }}>
                     This ticket is {selectedTicket?.status}. No further messages can be sent.
                   </Text>
                 </Box>

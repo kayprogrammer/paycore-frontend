@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { ApiResponse } from '@/types/common';
 import { setServerUnavailable } from '@/store/slices/serverStatusSlice';
+import { logout } from '@/store/slices/authSlice';
 import { isServerUnavailableError } from '@/utils/errorHandlers';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -20,6 +21,10 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+// Token refresh lock to prevent race conditions
+let isRefreshing = false;
+let refreshPromise: Promise<any> | null = null;
+
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -34,9 +39,17 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   }
 
   if (result.error && result.error.status === 401) {
-    // Try to refresh the token
-    // Refresh token is in HTTP-only cookie, so we just call the endpoint
-    const refreshResult = await baseQuery(
+    // If already refreshing, wait for the existing refresh to complete
+    if (isRefreshing && refreshPromise) {
+      await refreshPromise;
+      // Retry the original request with the new token
+      result = await baseQuery(args, api, extraOptions);
+      return result;
+    }
+
+    // Start refresh process
+    isRefreshing = true;
+    refreshPromise = baseQuery(
       {
         url: '/auth/refresh',
         method: 'POST',
@@ -46,6 +59,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       extraOptions
     );
 
+    const refreshResult = await refreshPromise;
+
     if (refreshResult.data) {
       const data = refreshResult.data as ApiResponse<{ access: string }>;
       // Store the new access token in localStorage (refresh token stays in HTTP-only cookie)
@@ -53,12 +68,19 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         localStorage.setItem('access_token', data.data.access);
       }
 
+      // Reset refresh state
+      isRefreshing = false;
+      refreshPromise = null;
+
       // Retry the original query with new token
       result = await baseQuery(args, api, extraOptions);
     } else {
-      // Refresh failed - clear tokens and redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+      // Reset refresh state
+      isRefreshing = false;
+      refreshPromise = null;
+
+      // Refresh failed - dispatch logout action to clear Redux state and redirect to login
+      api.dispatch(logout());
       window.location.href = '/login';
     }
   }

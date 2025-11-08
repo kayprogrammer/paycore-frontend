@@ -7,6 +7,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Card,
   CardBody,
   Button,
@@ -385,28 +386,30 @@ export const WalletsPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
-        <HStack justify="space-between">
+        <Stack direction={{ base: "column", md: "row" }} justify="space-between" spacing={{ base: 4, md: 0 }}>
           <Box>
-            <Heading size="lg" mb={2}>
+            <Heading size={{ base: "md", md: "lg" }} mb={2}>
               My Wallets
             </Heading>
-            <Text color="gray.600">Manage your wallets and security settings</Text>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Manage your wallets and security settings</Text>
           </Box>
           <HStack>
             <IconButton
               aria-label="Toggle balance visibility"
               icon={<Icon as={showBalance ? FiEye : FiEyeOff} />}
               variant="ghost"
+              size={{ base: "sm", md: "md" }}
               onClick={() => setShowBalance(!showBalance)}
             />
-            <Button leftIcon={<Icon as={FiPlus} />} colorScheme="brand" onClick={onCreateOpen}>
-              Create Wallet
+            <Button leftIcon={<Icon as={FiPlus} />} colorScheme="brand" onClick={onCreateOpen} size={{ base: "sm", md: "md" }}>
+              <Box display={{ base: "none", sm: "block" }}>Create Wallet</Box>
+              <Box display={{ base: "block", sm: "none" }}>Create</Box>
             </Button>
           </HStack>
-        </HStack>
+        </Stack>
 
         {/* Wallets Grid */}
         {wallets.length > 0 ? (
@@ -523,7 +526,7 @@ export const WalletsPage = () => {
       </VStack>
 
       {/* Create Wallet Modal */}
-      <Modal isOpen={isCreateOpen} onClose={onCreateClose}>
+      <Modal isOpen={isCreateOpen} onClose={onCreateClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={createForm.handleSubmit(handleCreate)}>
@@ -570,7 +573,7 @@ export const WalletsPage = () => {
       </Modal>
 
       {/* Edit Wallet Modal */}
-      <Modal isOpen={isEditOpen} onClose={onEditClose}>
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={editForm.handleSubmit(handleEdit)}>
@@ -617,7 +620,7 @@ export const WalletsPage = () => {
       </Modal>
 
       {/* Security Settings Modal */}
-      <Modal isOpen={isSecurityOpen} onClose={onSecurityClose}>
+      <Modal isOpen={isSecurityOpen} onClose={onSecurityClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Security Settings</ModalHeader>
@@ -686,7 +689,7 @@ export const WalletsPage = () => {
       </Modal>
 
       {/* PIN Modal */}
-      <Modal isOpen={isPinOpen} onClose={onPinClose}>
+      <Modal isOpen={isPinOpen} onClose={onPinClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={pinForm.handleSubmit(handlePinSubmit)}>

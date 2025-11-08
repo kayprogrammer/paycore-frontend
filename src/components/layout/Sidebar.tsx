@@ -1,4 +1,4 @@
-import { Box, VStack, Text, Icon, Flex, Avatar, Divider } from '@chakra-ui/react';
+import { Box, VStack, Text, Icon, Flex, Avatar, Divider, Drawer, DrawerContent, DrawerOverlay, DrawerCloseButton, useBreakpointValue } from '@chakra-ui/react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   FiHome,
@@ -34,16 +34,112 @@ const navItems: NavItem[] = [
   { label: 'Settings', icon: FiSettings, path: '/settings' },
 ];
 
-export const Sidebar = () => {
-  const location = useLocation();
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
-  // Fetch profile data
+const SidebarContent = ({ onClose }: { onClose?: () => void }) => {
+  const location = useLocation();
   const { data: profileData } = useGetProfileQuery();
   const profile = profileData?.data;
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
+
+  const handleNavClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  return (
+    <VStack spacing={6} align="stretch" h="full">
+      {/* Logo */}
+      <Box px={6}>
+        <Text fontSize="2xl" fontWeight="bold" color="brand.500">
+          PayCore
+        </Text>
+      </Box>
+
+      <Divider />
+
+      {/* Navigation */}
+      <VStack spacing={1} px={3} flex={1}>
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link key={item.path} to={item.path} style={{ width: '100%' }} onClick={handleNavClick}>
+              <Flex
+                align="center"
+                px={4}
+                py={3}
+                borderRadius="lg"
+                cursor="pointer"
+                bg={active ? 'brand.50' : 'transparent'}
+                color={active ? 'brand.600' : 'gray.600'}
+                fontWeight={active ? '600' : '400'}
+                _hover={{
+                  bg: active ? 'brand.50' : 'gray.50',
+                  color: active ? 'brand.600' : 'gray.900',
+                }}
+                transition="all 0.2s"
+              >
+                <Icon as={item.icon} boxSize={5} mr={3} />
+                <Text fontSize="sm">{item.label}</Text>
+              </Flex>
+            </Link>
+          );
+        })}
+      </VStack>
+
+      <Divider />
+
+      {/* User Profile */}
+      <Box px={6}>
+        <Link to="/profile" onClick={handleNavClick}>
+          <Flex align="center" cursor="pointer" _hover={{ opacity: 0.8 }}>
+            <Avatar
+              size="sm"
+              name={`${profile?.first_name} ${profile?.last_name}`}
+              src={profile?.avatar_url || undefined}
+              bg="brand.500"
+              color="white"
+              fontWeight="bold"
+              mr={3}
+            />
+            <Box>
+              <Text fontSize="sm" fontWeight="600">
+                {profile?.first_name} {profile?.last_name}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {profile?.email}
+              </Text>
+            </Box>
+          </Flex>
+        </Link>
+      </Box>
+    </VStack>
+  );
+};
+
+export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
+  if (isMobile) {
+    return (
+      <Drawer isOpen={isOpen || false} placement="left" onClose={onClose || (() => {})}>
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <Box py={6} overflowY="auto" h="100vh">
+            <SidebarContent onClose={onClose} />
+          </Box>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Box
@@ -58,73 +154,9 @@ export const Sidebar = () => {
       borderColor="gray.200"
       py={6}
       overflowY="auto"
+      display={{ base: 'none', md: 'block' }}
     >
-      <VStack spacing={6} align="stretch" h="full">
-        {/* Logo */}
-        <Box px={6}>
-          <Text fontSize="2xl" fontWeight="bold" color="brand.500">
-            PayCore
-          </Text>
-        </Box>
-
-        <Divider />
-
-        {/* Navigation */}
-        <VStack spacing={1} px={3} flex={1}>
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link key={item.path} to={item.path} style={{ width: '100%' }}>
-                <Flex
-                  align="center"
-                  px={4}
-                  py={3}
-                  borderRadius="lg"
-                  cursor="pointer"
-                  bg={active ? 'brand.50' : 'transparent'}
-                  color={active ? 'brand.600' : 'gray.600'}
-                  fontWeight={active ? '600' : '400'}
-                  _hover={{
-                    bg: active ? 'brand.50' : 'gray.50',
-                    color: active ? 'brand.600' : 'gray.900',
-                  }}
-                  transition="all 0.2s"
-                >
-                  <Icon as={item.icon} boxSize={5} mr={3} />
-                  <Text fontSize="sm">{item.label}</Text>
-                </Flex>
-              </Link>
-            );
-          })}
-        </VStack>
-
-        <Divider />
-
-        {/* User Profile */}
-        <Box px={6}>
-          <Link to="/profile">
-            <Flex align="center" cursor="pointer" _hover={{ opacity: 0.8 }}>
-              <Avatar
-                size="sm"
-                name={`${profile?.first_name} ${profile?.last_name}`}
-                src={profile?.avatar_url || undefined}
-                bg="brand.500"
-                color="white"
-                fontWeight="bold"
-                mr={3}
-              />
-              <Box>
-                <Text fontSize="sm" fontWeight="600">
-                  {profile?.first_name} {profile?.last_name}
-                </Text>
-                <Text fontSize="xs" color="gray.500">
-                  {profile?.email}
-                </Text>
-              </Box>
-            </Flex>
-          </Link>
-        </Box>
-      </VStack>
+      <SidebarContent />
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box } from '@chakra-ui/react';
 import { useAppSelector, useAppDispatch } from '@/hooks';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
@@ -22,6 +22,9 @@ import { WalletsPage } from '@/pages/wallets/WalletsPage';
 import { CardsPage } from '@/pages/cards/CardsPage';
 import { TransactionsPage } from '@/pages/transactions/TransactionsPage';
 import { BillsPage } from '@/pages/bills/BillsPage';
+import { PaymentsPage } from '@/pages/payments/PaymentsPage';
+import { PaymentLinkPublicPage } from '@/pages/payments/PaymentLinkPublicPage';
+import { InvoicePublicPage } from '@/pages/payments/InvoicePublicPage';
 import { LoansPage } from '@/pages/loans/LoansPage';
 import { InvestmentsPage } from '@/pages/investments/InvestmentsPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
@@ -47,9 +50,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 // Public Route Component (redirect if authenticated)
 const PublicRoute = ({ children }: ProtectedRouteProps) => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const location = useLocation();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // Check if there's a 'next' parameter in the URL
+    const searchParams = new URLSearchParams(location.search);
+    const nextUrl = searchParams.get('next');
+
+    console.log('PublicRoute - isAuthenticated, redirecting');
+    console.log('PublicRoute - location.search:', location.search);
+    console.log('PublicRoute - nextUrl:', nextUrl);
+
+    // Redirect to the 'next' URL if it exists, otherwise go to dashboard
+    return <Navigate to={nextUrl || '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -115,6 +128,12 @@ function App() {
           }
         />
 
+        {/* Public Payment Link - View accessible to all, payment requires auth */}
+        <Route path="/pay/:slug" element={<PaymentLinkPublicPage />} />
+
+        {/* Public Invoice - View accessible to all, payment requires auth */}
+        <Route path="/invoices/:invoice_number" element={<InvoicePublicPage />} />
+
         {/* Protected Routes */}
         <Route
           path="/dashboard"
@@ -162,6 +181,16 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <BillsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payments/*"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <PaymentsPage />
               </MainLayout>
             </ProtectedRoute>
           }

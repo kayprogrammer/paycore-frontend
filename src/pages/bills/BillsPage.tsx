@@ -5,6 +5,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Card,
   CardBody,
   Button,
@@ -260,24 +261,24 @@ export const BillsPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
-        <HStack justify="space-between">
+        <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} spacing={{ base: 4, md: 0 }}>
           <Box>
-            <Heading size="lg" mb={2}>
+            <Heading size={{ base: "md", md: "lg" }} mb={2}>
               Pay Bills
             </Heading>
-            <Text color="gray.600">Pay for airtime, data, electricity, and more</Text>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Pay for airtime, data, electricity, and more</Text>
           </Box>
-          <Button variant="outline" onClick={onHistoryOpen}>
+          <Button variant="outline" onClick={onHistoryOpen} size={{ base: "sm", md: "md" }} width={{ base: "full", md: "auto" }}>
             Payment History
           </Button>
-        </HStack>
+        </Stack>
 
         {/* Categories Grid */}
         <Box>
-          <Heading size="md" mb={4}>
+          <Heading size={{ base: "sm", md: "md" }} mb={{ base: 3, md: 4 }}>
             Select Category
           </Heading>
           <SimpleGrid columns={{ base: 2, md: 3, lg: 6 }} spacing={4}>
@@ -295,10 +296,10 @@ export const BillsPage = () => {
                   <VStack spacing={3}>
                     <Icon
                       as={category.icon}
-                      boxSize={10}
+                      boxSize={{ base: 8, md: 10 }}
                       color={`${category.color}.500`}
                     />
-                    <Text fontWeight="600" fontSize="sm" textAlign="center">
+                    <Text fontWeight="600" fontSize={{ base: "xs", md: "sm" }} textAlign="center">
                       {category.name}
                     </Text>
                   </VStack>
@@ -311,7 +312,7 @@ export const BillsPage = () => {
         {/* Providers */}
         {selectedCategory && (
           <Box>
-            <Heading size="md" mb={4}>
+            <Heading size={{ base: "sm", md: "md" }} mb={{ base: 3, md: 4 }}>
               Select Provider
             </Heading>
             {loadingProviders ? (
@@ -336,18 +337,18 @@ export const BillsPage = () => {
                           <Image
                             src={provider.logo_url}
                             alt={provider.name}
-                            boxSize="60px"
+                            boxSize={{ base: "50px", md: "60px" }}
                             objectFit="contain"
                           />
                         ) : (
-                          <Icon as={FiFileText} boxSize={10} color="gray.400" />
+                          <Icon as={FiFileText} boxSize={{ base: 8, md: 10 }} color="gray.400" />
                         )}
                         <VStack spacing={1}>
-                          <Text fontWeight="600" fontSize="sm" textAlign="center">
+                          <Text fontWeight="600" fontSize={{ base: "xs", md: "sm" }} textAlign="center">
                             {provider.name}
                           </Text>
                           {provider.available && (
-                            <Badge colorScheme="green" fontSize="xs">
+                            <Badge colorScheme="green" fontSize={{ base: "2xs", md: "xs" }}>
                               Available
                             </Badge>
                           )}
@@ -369,11 +370,11 @@ export const BillsPage = () => {
       </VStack>
 
       {/* Payment Modal */}
-      <Modal isOpen={isPaymentOpen} onClose={onPaymentClose} size="lg">
+      <Modal isOpen={isPaymentOpen} onClose={onPaymentClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={paymentForm.handleSubmit(handlePayment)}>
-            <ModalHeader>
+            <ModalHeader fontSize={{ base: "lg", md: "xl" }}>
               Pay {selectedProvider?.name} Bill
             </ModalHeader>
             <ModalCloseButton />
@@ -382,10 +383,11 @@ export const BillsPage = () => {
                 {/* Select Package (if applicable) */}
                 {selectedProvider?.has_packages && packages.length > 0 && (
                   <FormControl isRequired>
-                    <FormLabel>Select Package</FormLabel>
+                    <FormLabel fontSize={{ base: "sm", md: "md" }}>Select Package</FormLabel>
                     <Select
                       {...paymentForm.register('package_id')}
                       placeholder="Choose package"
+                      size={{ base: "sm", md: "md" }}
                       onChange={(e) => {
                         const pkg = packages.find((p: any) => p.id === e.target.value);
                         setSelectedPackage(pkg);
@@ -402,7 +404,7 @@ export const BillsPage = () => {
 
                 {/* Customer ID */}
                 <FormControl isRequired>
-                  <FormLabel>
+                  <FormLabel fontSize={{ base: "sm", md: "md" }}>
                     {selectedCategory === 'airtime' || selectedCategory === 'data'
                       ? 'Phone Number'
                       : selectedCategory === 'electricity'
@@ -411,15 +413,16 @@ export const BillsPage = () => {
                       ? 'Smart Card Number'
                       : 'Customer ID'}
                   </FormLabel>
-                  <HStack>
+                  <Stack direction={{ base: "column", sm: "row" }} spacing={2}>
                     <Input
                       {...paymentForm.register('customer_id')}
                       placeholder="Enter customer ID"
+                      size={{ base: "sm", md: "md" }}
                     />
-                    <Button onClick={handleValidateCustomer} isLoading={validating}>
+                    <Button onClick={handleValidateCustomer} isLoading={validating} size={{ base: "sm", md: "md" }} flexShrink={0}>
                       Validate
                     </Button>
-                  </HStack>
+                  </Stack>
                 </FormControl>
 
                 {/* Validated Customer Info */}
@@ -427,11 +430,11 @@ export const BillsPage = () => {
                   <Card bg="green.50" width="full">
                     <CardBody>
                       <HStack>
-                        <Icon as={FiCheckCircle} color="green.500" />
+                        <Icon as={FiCheckCircle} color="green.500" boxSize={{ base: 5, md: 6 }} />
                         <VStack align="start" spacing={0} flex={1}>
-                          <Text fontWeight="600">{validatedCustomer.customer_name}</Text>
+                          <Text fontWeight="600" fontSize={{ base: "sm", md: "md" }}>{validatedCustomer.customer_name}</Text>
                           {validatedCustomer.address && (
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                               {validatedCustomer.address}
                             </Text>
                           )}
@@ -444,20 +447,21 @@ export const BillsPage = () => {
                 {/* Amount (if not package-based) */}
                 {!selectedProvider?.has_packages && (
                   <FormControl isRequired>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel fontSize={{ base: "sm", md: "md" }}>Amount</FormLabel>
                     <Input
                       type="number"
                       step="0.01"
                       {...paymentForm.register('amount', { valueAsNumber: true })}
                       placeholder="0.00"
+                      size={{ base: "sm", md: "md" }}
                     />
                   </FormControl>
                 )}
 
                 {/* Wallet Selection */}
                 <FormControl isRequired>
-                  <FormLabel>Payment Wallet</FormLabel>
-                  <Select {...paymentForm.register('wallet_id')} placeholder="Select wallet">
+                  <FormLabel fontSize={{ base: "sm", md: "md" }}>Payment Wallet</FormLabel>
+                  <Select {...paymentForm.register('wallet_id')} placeholder="Select wallet" size={{ base: "sm", md: "md" }}>
                     {wallets.map((wallet: any) => (
                       <option key={wallet.wallet_id} value={wallet.wallet_id}>
                         {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
@@ -468,12 +472,13 @@ export const BillsPage = () => {
 
                 {/* PIN */}
                 <FormControl isRequired>
-                  <FormLabel>Wallet PIN</FormLabel>
+                  <FormLabel fontSize={{ base: "sm", md: "md" }}>Wallet PIN</FormLabel>
                   <Input
                     type="password"
                     maxLength={4}
                     {...paymentForm.register('pin')}
                     placeholder="Enter your PIN"
+                    size={{ base: "sm", md: "md" }}
                   />
                 </FormControl>
 
@@ -483,8 +488,8 @@ export const BillsPage = () => {
                     <CardBody>
                       <VStack align="stretch" spacing={2}>
                         <HStack justify="space-between">
-                          <Text color="gray.600">Amount</Text>
-                          <Text fontWeight="bold">
+                          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Amount</Text>
+                          <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>
                             {formatCurrency(
                               selectedPackage?.price || paymentForm.watch('amount') || 0,
                               'NGN'
@@ -492,15 +497,15 @@ export const BillsPage = () => {
                           </Text>
                         </HStack>
                         <HStack justify="space-between">
-                          <Text color="gray.600">Fee</Text>
-                          <Text fontWeight="bold">
+                          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Fee</Text>
+                          <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>
                             {formatCurrency(selectedProvider?.fee || 0, 'NGN')}
                           </Text>
                         </HStack>
                         <Box borderTop="1px" borderColor="gray.200" pt={2}>
                           <HStack justify="space-between">
-                            <Text fontWeight="600">Total</Text>
-                            <Text fontWeight="bold" fontSize="lg">
+                            <Text fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Total</Text>
+                            <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }}>
                               {formatCurrency(
                                 (selectedPackage?.price || paymentForm.watch('amount') || 0) +
                                   (selectedProvider?.fee || 0),
@@ -516,7 +521,7 @@ export const BillsPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onPaymentClose}>
+              <Button variant="ghost" mr={3} onClick={onPaymentClose} size={{ base: "sm", md: "md" }}>
                 Cancel
               </Button>
               <Button
@@ -524,6 +529,7 @@ export const BillsPage = () => {
                 type="submit"
                 isLoading={paying}
                 isDisabled={!validatedCustomer}
+                size={{ base: "sm", md: "md" }}
               >
                 Pay Now
               </Button>
@@ -533,47 +539,49 @@ export const BillsPage = () => {
       </Modal>
 
       {/* Payment History Modal */}
-      <Modal isOpen={isHistoryOpen} onClose={onHistoryClose} size="xl">
+      <Modal isOpen={isHistoryOpen} onClose={onHistoryClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Payment History</ModalHeader>
+          <ModalHeader fontSize={{ base: "lg", md: "xl" }}>Payment History</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {loadingHistory ? (
               <LoadingSpinner />
             ) : payments.length > 0 ? (
-              <Table variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>Provider</Th>
-                    <Th>Customer ID</Th>
-                    <Th>Amount</Th>
-                    <Th>Status</Th>
-                    <Th>Date</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {payments.map((payment: any) => (
-                    <Tr key={payment.id}>
-                      <Td>{payment.provider_name}</Td>
-                      <Td fontFamily="mono" fontSize="sm">
-                        {payment.customer_identifier}
-                      </Td>
-                      <Td fontWeight="600">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </Td>
-                      <Td>
-                        <Badge colorScheme={getStatusColor(payment.status)}>
-                          {payment.status}
-                        </Badge>
-                      </Td>
-                      <Td fontSize="sm" color="gray.600">
-                        {formatRelativeTime(payment.created_at)}
-                      </Td>
+              <Box overflowX="auto">
+                <Table variant="simple" size={{ base: "sm", md: "md" }}>
+                  <Thead>
+                    <Tr>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Provider</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Customer ID</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Amount</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Status</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Date</Th>
                     </Tr>
-                  ))}
-                </Tbody>
-              </Table>
+                  </Thead>
+                  <Tbody>
+                    {payments.map((payment: any) => (
+                      <Tr key={payment.id}>
+                        <Td fontSize={{ base: "xs", md: "sm" }}>{payment.provider_name}</Td>
+                        <Td fontFamily="mono" fontSize={{ base: "xs", md: "sm" }}>
+                          {payment.customer_identifier}
+                        </Td>
+                        <Td fontWeight="600" fontSize={{ base: "xs", md: "sm" }}>
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </Td>
+                        <Td>
+                          <Badge colorScheme={getStatusColor(payment.status)} fontSize={{ base: "2xs", md: "xs" }}>
+                            {payment.status}
+                          </Badge>
+                        </Td>
+                        <Td fontSize={{ base: "xs", md: "sm" }} color="gray.600">
+                          {formatRelativeTime(payment.created_at)}
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </Box>
             ) : (
               <EmptyState
                 icon={FiFileText}
@@ -583,7 +591,7 @@ export const BillsPage = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={onHistoryClose}>Close</Button>
+            <Button onClick={onHistoryClose} size={{ base: "sm", md: "md" }}>Close</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

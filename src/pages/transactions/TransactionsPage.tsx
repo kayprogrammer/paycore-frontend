@@ -5,6 +5,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Card,
   CardBody,
   Button,
@@ -577,7 +578,7 @@ export const TransactionsPage = () => {
 
   if (isLoading && !transactions.length) {
     return (
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
         <VStack spacing={6} align="stretch">
           <Skeleton height="60px" />
           <Skeleton height="400px" />
@@ -587,28 +588,43 @@ export const TransactionsPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
-        <HStack justify="space-between">
+        <Stack direction={{ base: "column", md: "row" }} justify="space-between" spacing={{ base: 4, md: 0 }}>
           <Box>
-            <Heading size="lg" mb={2}>
+            <Heading size={{ base: "md", md: "lg" }} mb={2}>
               Transactions
             </Heading>
-            <Text color="gray.600">View and manage your transaction history</Text>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>View and manage your transaction history</Text>
           </Box>
-          <HStack>
-            <Button leftIcon={<Icon as={FiDownload} />} colorScheme="green" onClick={onDepositOpen}>
+          <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 2, sm: 3 }}>
+            <Button
+              leftIcon={<Icon as={FiDownload} />}
+              colorScheme="green"
+              onClick={onDepositOpen}
+              size={{ base: "sm", md: "md" }}
+            >
               Add Money
             </Button>
-            <Button leftIcon={<Icon as={FiUpload} />} variant="outline" onClick={onWithdrawOpen}>
+            <Button
+              leftIcon={<Icon as={FiUpload} />}
+              variant="outline"
+              onClick={onWithdrawOpen}
+              size={{ base: "sm", md: "md" }}
+            >
               Withdraw
             </Button>
-            <Button leftIcon={<Icon as={FiSend} />} colorScheme="brand" onClick={onTransferOpen}>
+            <Button
+              leftIcon={<Icon as={FiSend} />}
+              colorScheme="brand"
+              onClick={onTransferOpen}
+              size={{ base: "sm", md: "md" }}
+            >
               Transfer
             </Button>
-          </HStack>
-        </HStack>
+          </Stack>
+        </Stack>
 
         {/* Deposit Processing Alert */}
         {isProcessingDeposit && (
@@ -700,8 +716,8 @@ export const TransactionsPage = () => {
         {/* Filters */}
         <Card>
           <CardBody>
-            <HStack spacing={4} flexWrap="wrap">
-              <InputGroup maxW="300px">
+            <Stack direction={{ base: "column", md: "row" }} spacing={4}>
+              <InputGroup maxW={{ base: "full", md: "300px" }}>
                 <InputLeftElement>
                   <Icon as={FiSearch} color="gray.400" />
                 </InputLeftElement>
@@ -709,14 +725,16 @@ export const TransactionsPage = () => {
                   placeholder="Search transactions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  size={{ base: "sm", md: "md" }}
                 />
               </InputGroup>
 
               <Select
-                maxW="200px"
+                maxW={{ base: "full", md: "200px" }}
                 placeholder="All Status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
+                size={{ base: "sm", md: "md" }}
               >
                 <option value="completed">Completed</option>
                 <option value="pending">Pending</option>
@@ -724,10 +742,11 @@ export const TransactionsPage = () => {
               </Select>
 
               <Select
-                maxW="200px"
+                maxW={{ base: "full", md: "200px" }}
                 placeholder="All Types"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
+                size={{ base: "sm", md: "md" }}
               >
                 <option value="transfer">Transfer</option>
                 <option value="deposit">Deposit</option>
@@ -744,10 +763,11 @@ export const TransactionsPage = () => {
                   setFilterType('');
                   refetch();
                 }}
+                size={{ base: "sm", md: "md" }}
               >
                 Reset
               </Button>
-            </HStack>
+            </Stack>
           </CardBody>
         </Card>
 
@@ -764,83 +784,87 @@ export const TransactionsPage = () => {
               <ErrorAlert message="Failed to load transactions. Please try again." />
             ) : transactions.length > 0 ? (
               <>
-                <Table variant="simple">
-                  <Thead>
-                    <Tr>
-                      <Th>Type</Th>
-                      <Th>Reference</Th>
-                      <Th>Description</Th>
-                      <Th>Amount</Th>
-                      <Th>Status</Th>
-                      <Th>Date</Th>
-                      <Th>Actions</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {transactions.map((transaction: any) => (
-                      <Tr key={transaction.id}>
-                        <Td>
-                          <HStack>
-                            <Icon
-                              as={transaction.type === 'credit' ? FiArrowDownRight : FiArrowUpRight}
-                              color={transaction.type === 'credit' ? 'green.500' : 'red.500'}
-                            />
-                            <Text textTransform="capitalize">
-                              {transaction.transaction_type.replace('_', ' ')}
-                            </Text>
-                          </HStack>
-                        </Td>
-                        <Td fontFamily="mono" fontSize="sm">
-                          {transaction.reference}
-                        </Td>
-                        <Td maxW="200px" isTruncated>
-                          {transaction.description || '-'}
-                        </Td>
-                        <Td fontWeight="600">
-                          <Text color={transaction.type === 'credit' ? 'green.600' : 'red.600'}>
-                            {transaction.type === 'credit' ? '+' : '-'}
-                            {formatCurrency(transaction.amount, transaction.currency)}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Badge colorScheme={getStatusColor(transaction.status)}>
-                            {transaction.status}
-                          </Badge>
-                        </Td>
-                        <Td fontSize="sm" color="gray.600">
-                          {formatRelativeTime(transaction.completed_at || transaction.initiated_at)}
-                        </Td>
-                        <Td>
-                          <HStack spacing={2}>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openDetailsModal(transaction)}
-                            >
-                              View
-                            </Button>
-                            {transaction.status === 'completed' && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                colorScheme="red"
-                                onClick={() => openDisputeModal(transaction)}
-                              >
-                                Dispute
-                              </Button>
-                            )}
-                          </HStack>
-                        </Td>
+                <Box overflowX="auto">
+                  <Table variant="simple" size={{ base: "sm", md: "md" }}>
+                    <Thead>
+                      <Tr>
+                        <Th fontSize={{ base: "xs", md: "sm" }}>Type</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }}>Reference</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }} display={{ base: "none", sm: "table-cell" }}>Description</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }}>Amount</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }}>Status</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }} display={{ base: "none", md: "table-cell" }}>Date</Th>
+                        <Th fontSize={{ base: "xs", md: "sm" }}>Actions</Th>
                       </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
+                    </Thead>
+                    <Tbody>
+                      {transactions.map((transaction: any) => (
+                        <Tr key={transaction.id}>
+                          <Td fontSize={{ base: "xs", md: "sm" }}>
+                            <HStack spacing={{ base: 1, md: 2 }}>
+                              <Icon
+                                as={transaction.type === 'credit' ? FiArrowDownRight : FiArrowUpRight}
+                                color={transaction.type === 'credit' ? 'green.500' : 'red.500'}
+                                boxSize={{ base: 3, md: 4 }}
+                              />
+                              <Text textTransform="capitalize" display={{ base: "none", sm: "block" }}>
+                                {transaction.transaction_type.replace('_', ' ')}
+                              </Text>
+                            </HStack>
+                          </Td>
+                          <Td fontFamily="mono" fontSize={{ base: "xs", md: "sm" }}>
+                            {transaction.reference}
+                          </Td>
+                          <Td maxW="200px" isTruncated fontSize={{ base: "xs", md: "sm" }} display={{ base: "none", sm: "table-cell" }}>
+                            {transaction.description || '-'}
+                          </Td>
+                          <Td fontWeight="600" fontSize={{ base: "xs", md: "sm" }}>
+                            <Text color={transaction.type === 'credit' ? 'green.600' : 'red.600'}>
+                              {transaction.type === 'credit' ? '+' : '-'}
+                              {formatCurrency(transaction.amount, transaction.currency)}
+                            </Text>
+                          </Td>
+                          <Td fontSize={{ base: "xs", md: "sm" }}>
+                            <Badge colorScheme={getStatusColor(transaction.status)} fontSize={{ base: "2xs", md: "xs" }}>
+                              {transaction.status}
+                            </Badge>
+                          </Td>
+                          <Td fontSize={{ base: "xs", md: "sm" }} color="gray.600" display={{ base: "none", md: "table-cell" }}>
+                            {formatRelativeTime(transaction.completed_at || transaction.initiated_at)}
+                          </Td>
+                          <Td fontSize={{ base: "xs", md: "sm" }}>
+                            <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 1, sm: 2 }}>
+                              <Button
+                                size={{ base: "xs", md: "sm" }}
+                                variant="ghost"
+                                onClick={() => openDetailsModal(transaction)}
+                              >
+                                View
+                              </Button>
+                              {transaction.status === 'completed' && (
+                                <Button
+                                  size={{ base: "xs", md: "sm" }}
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  onClick={() => openDisputeModal(transaction)}
+                                  display={{ base: "none", sm: "inline-flex" }}
+                                >
+                                  Dispute
+                                </Button>
+                              )}
+                            </Stack>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
 
                 {/* Pagination */}
                 {pagination && pagination.total_pages > 1 && (
-                  <HStack justify="center" mt={6} spacing={1}>
+                  <HStack justify="center" mt={6} spacing={1} flexWrap="wrap">
                     <Button
-                      size="sm"
+                      size={{ base: "xs", md: "sm" }}
                       onClick={() => setPage(page - 1)}
                       isDisabled={page === 1}
                       variant="ghost"
@@ -852,14 +876,14 @@ export const TransactionsPage = () => {
                     {page > 3 && (
                       <>
                         <Button
-                          size="sm"
+                          size={{ base: "xs", md: "sm" }}
                           onClick={() => setPage(1)}
                           variant="ghost"
                         >
                           1
                         </Button>
                         {page > 4 && (
-                          <Text px={2} color="gray.500">...</Text>
+                          <Text px={2} color="gray.500" fontSize={{ base: "xs", md: "sm" }}>...</Text>
                         )}
                       </>
                     )}
@@ -873,7 +897,7 @@ export const TransactionsPage = () => {
                       .map(pageNum => (
                         <Button
                           key={pageNum}
-                          size="sm"
+                          size={{ base: "xs", md: "sm" }}
                           onClick={() => setPage(pageNum)}
                           colorScheme={pageNum === page ? "brand" : "gray"}
                           variant={pageNum === page ? "solid" : "ghost"}
@@ -886,10 +910,10 @@ export const TransactionsPage = () => {
                     {page < pagination.total_pages - 2 && (
                       <>
                         {page < pagination.total_pages - 3 && (
-                          <Text px={2} color="gray.500">...</Text>
+                          <Text px={2} color="gray.500" fontSize={{ base: "xs", md: "sm" }}>...</Text>
                         )}
                         <Button
-                          size="sm"
+                          size={{ base: "xs", md: "sm" }}
                           onClick={() => setPage(pagination.total_pages)}
                           variant="ghost"
                         >
@@ -899,7 +923,7 @@ export const TransactionsPage = () => {
                     )}
 
                     <Button
-                      size="sm"
+                      size={{ base: "xs", md: "sm" }}
                       onClick={() => setPage(page + 1)}
                       isDisabled={page === pagination.total_pages}
                       variant="ghost"
@@ -922,7 +946,7 @@ export const TransactionsPage = () => {
       </VStack>
 
       {/* Transfer Modal */}
-      <Modal isOpen={isTransferOpen} onClose={onTransferClose} size="lg">
+      <Modal isOpen={isTransferOpen} onClose={onTransferClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={transferForm.handleSubmit(handleTransfer)}>
@@ -1000,10 +1024,10 @@ export const TransactionsPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onTransferClose}>
+              <Button variant="ghost" mr={3} onClick={onTransferClose} size={{ base: "sm", md: "md" }}>
                 Cancel
               </Button>
-              <Button colorScheme="brand" type="submit" isLoading={transferring}>
+              <Button colorScheme="brand" type="submit" isLoading={transferring} size={{ base: "sm", md: "md" }}>
                 Send Money
               </Button>
             </ModalFooter>
@@ -1012,7 +1036,7 @@ export const TransactionsPage = () => {
       </Modal>
 
       {/* Deposit Modal */}
-      <Modal isOpen={isDepositOpen} onClose={onDepositClose}>
+      <Modal isOpen={isDepositOpen} onClose={onDepositClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={depositForm.handleSubmit(handleDeposit)}>
@@ -1052,10 +1076,10 @@ export const TransactionsPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onDepositClose}>
+              <Button variant="ghost" mr={3} onClick={onDepositClose} size={{ base: "sm", md: "md" }}>
                 Cancel
               </Button>
-              <Button colorScheme="brand" type="submit" isLoading={depositing}>
+              <Button colorScheme="brand" type="submit" isLoading={depositing} size={{ base: "sm", md: "md" }}>
                 Continue
               </Button>
             </ModalFooter>
@@ -1064,7 +1088,7 @@ export const TransactionsPage = () => {
       </Modal>
 
       {/* Withdraw Modal */}
-      <Modal isOpen={isWithdrawOpen} onClose={onWithdrawClose} size="lg">
+      <Modal isOpen={isWithdrawOpen} onClose={onWithdrawClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={withdrawForm.handleSubmit(handleWithdraw)}>
@@ -1098,7 +1122,7 @@ export const TransactionsPage = () => {
                   <FormLabel>Account Number</FormLabel>
                   <HStack>
                     <Input {...withdrawForm.register('account_number')} placeholder="0000000000" />
-                    <Button type="button" onClick={handleVerifyAccount} isLoading={verifying}>
+                    <Button type="button" onClick={handleVerifyAccount} isLoading={verifying} size={{ base: "sm", md: "md" }}>
                       Verify
                     </Button>
                   </HStack>
@@ -1133,10 +1157,10 @@ export const TransactionsPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onWithdrawClose}>
+              <Button variant="ghost" mr={3} onClick={onWithdrawClose} size={{ base: "sm", md: "md" }}>
                 Cancel
               </Button>
-              <Button colorScheme="brand" type="submit" isLoading={withdrawing}>
+              <Button colorScheme="brand" type="submit" isLoading={withdrawing} size={{ base: "sm", md: "md" }}>
                 Withdraw
               </Button>
             </ModalFooter>
@@ -1145,7 +1169,7 @@ export const TransactionsPage = () => {
       </Modal>
 
       {/* Dispute Modal */}
-      <Modal isOpen={isDisputeOpen} onClose={onDisputeClose}>
+      <Modal isOpen={isDisputeOpen} onClose={onDisputeClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={disputeForm.handleSubmit(handleDispute)}>
@@ -1177,10 +1201,10 @@ export const TransactionsPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onDisputeClose}>
+              <Button variant="ghost" mr={3} onClick={onDisputeClose} size={{ base: "sm", md: "md" }}>
                 Cancel
               </Button>
-              <Button colorScheme="red" type="submit" isLoading={disputing}>
+              <Button colorScheme="red" type="submit" isLoading={disputing} size={{ base: "sm", md: "md" }}>
                 Submit Dispute
               </Button>
             </ModalFooter>
@@ -1189,7 +1213,7 @@ export const TransactionsPage = () => {
       </Modal>
 
       {/* Transaction Details Modal */}
-      <Modal isOpen={isDetailsOpen} onClose={onDetailsClose}>
+      <Modal isOpen={isDetailsOpen} onClose={onDetailsClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Transaction Details</ModalHeader>
@@ -1241,7 +1265,7 @@ export const TransactionsPage = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={onDetailsClose}>Close</Button>
+            <Button onClick={onDetailsClose} size={{ base: "sm", md: "md" }}>Close</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -30,15 +30,21 @@ export const paymentsApi = baseApi.injectEndpoints({
       QueryParams | void
     >({
       query: (params) => ({
-        url: '/payments/links',
+        url: '/payments/links/list',
         params,
       }),
       providesTags: ['Payments'],
     }),
 
-    // 3. Get Payment Link
+    // 3. Get Payment Link (Authenticated)
     getPaymentLink: builder.query<ApiResponse<PaymentLink>, string>({
-      query: (id) => `/payments/links/link/${id}`,
+      query: (id) => `/payments/links/${id}`,
+      providesTags: ['Payments'],
+    }),
+
+    // 3b. Get Payment Link by Slug (Public - No Auth)
+    getPaymentLinkBySlug: builder.query<ApiResponse<PaymentLink>, string>({
+      query: (slug) => `/payments/pay/${slug}`,
       providesTags: ['Payments'],
     }),
 
@@ -48,7 +54,7 @@ export const paymentsApi = baseApi.injectEndpoints({
       { id: string; data: UpdatePaymentLinkRequest }
     >({
       query: ({ id, data }) => ({
-        url: `/payments/links/link/${id}`,
+        url: `/payments/links/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -58,16 +64,16 @@ export const paymentsApi = baseApi.injectEndpoints({
     // 5. Delete Payment Link
     deletePaymentLink: builder.mutation<ApiResponse<null>, string>({
       query: (id) => ({
-        url: `/payments/links/link/${id}`,
+        url: `/payments/links/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Payments'],
     }),
 
-    // 6. Pay Payment Link
-    payPaymentLink: builder.mutation<ApiResponse<Payment>, PayPaymentLinkRequest>({
-      query: (data) => ({
-        url: '/payments/links/pay',
+    // 6. Pay Payment Link (Public endpoint - by slug)
+    payPaymentLink: builder.mutation<ApiResponse<Payment>, { slug: string; data: any }>({
+      query: ({ slug, data }) => ({
+        url: `/payments/pay/${slug}`,
         method: 'POST',
         body: data,
       }),
@@ -87,7 +93,7 @@ export const paymentsApi = baseApi.injectEndpoints({
     // 8. List Invoices
     listInvoices: builder.query<ApiResponse<PaginatedResponse<Invoice>>, QueryParams | void>({
       query: (params) => ({
-        url: '/payments/invoices',
+        url: '/payments/invoices/list',
         params,
       }),
       providesTags: ['Payments'],
@@ -95,8 +101,24 @@ export const paymentsApi = baseApi.injectEndpoints({
 
     // 9. Get Invoice
     getInvoice: builder.query<ApiResponse<Invoice>, string>({
-      query: (id) => `/payments/invoices/invoice/${id}`,
+      query: (id) => `/payments/invoices/${id}`,
       providesTags: ['Payments'],
+    }),
+
+    // 9b. Get Invoice by Number (Public - No Auth)
+    getInvoiceByNumber: builder.query<ApiResponse<Invoice>, string>({
+      query: (invoice_number) => `/payments/invoices/public/${invoice_number}`,
+      providesTags: ['Payments'],
+    }),
+
+    // 9c. Pay Invoice
+    payInvoice: builder.mutation<ApiResponse<Payment>, { invoice_number: string; data: any }>({
+      query: ({ invoice_number, data }) => ({
+        url: `/payments/invoices/pay/${invoice_number}`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Payments', 'Wallets'],
     }),
 
     // 10. Update Invoice
@@ -105,7 +127,7 @@ export const paymentsApi = baseApi.injectEndpoints({
       { id: string; data: UpdateInvoiceRequest }
     >({
       query: ({ id, data }) => ({
-        url: `/payments/invoices/invoice/${id}`,
+        url: `/payments/invoices/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -115,16 +137,16 @@ export const paymentsApi = baseApi.injectEndpoints({
     // 11. Delete Invoice
     deleteInvoice: builder.mutation<ApiResponse<null>, string>({
       query: (id) => ({
-        url: `/payments/invoices/invoice/${id}`,
+        url: `/payments/invoices/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Payments'],
     }),
 
-    // 12. Pay Invoice
-    payInvoice: builder.mutation<ApiResponse<Payment>, PayInvoiceRequest>({
-      query: (data) => ({
-        url: '/payments/invoices/pay',
+    // 12. Pay Invoice (Public endpoint - by invoice number)
+    payInvoice: builder.mutation<ApiResponse<Payment>, { invoice_number: string; data: any }>({
+      query: ({ invoice_number, data }) => ({
+        url: `/payments/invoice/${invoice_number}/pay`,
         method: 'POST',
         body: data,
       }),
@@ -134,7 +156,7 @@ export const paymentsApi = baseApi.injectEndpoints({
     // 13. List Payments
     listPayments: builder.query<ApiResponse<PaginatedResponse<Payment>>, QueryParams | void>({
       query: (params) => ({
-        url: '/payments',
+        url: '/payments/payments/list',
         params,
       }),
       providesTags: ['Payments'],
@@ -142,7 +164,7 @@ export const paymentsApi = baseApi.injectEndpoints({
 
     // 14. Get Payment
     getPayment: builder.query<ApiResponse<Payment>, string>({
-      query: (id) => `/payments/payment/${id}`,
+      query: (id) => `/payments/payments/${id}`,
       providesTags: ['Payments'],
     }),
 
@@ -169,12 +191,14 @@ export const {
   useCreatePaymentLinkMutation,
   useListPaymentLinksQuery,
   useGetPaymentLinkQuery,
+  useGetPaymentLinkBySlugQuery,
   useUpdatePaymentLinkMutation,
   useDeletePaymentLinkMutation,
   usePayPaymentLinkMutation,
   useCreateInvoiceMutation,
   useListInvoicesQuery,
   useGetInvoiceQuery,
+  useGetInvoiceByNumberQuery,
   useUpdateInvoiceMutation,
   useDeleteInvoiceMutation,
   usePayInvoiceMutation,

@@ -30,7 +30,7 @@ import {
   Checkbox,
   useToast,
 } from '@chakra-ui/react';
-import { FiBell, FiLogOut, FiUser, FiSettings, FiCheck, FiTrash2, FiCheckCircle } from 'react-icons/fi';
+import { FiBell, FiLogOut, FiUser, FiSettings, FiCheck, FiTrash2, FiCheckCircle, FiMenu } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -44,7 +44,11 @@ import { useGetProfileQuery } from '@/features/profile/services/profileApi';
 import { formatRelativeTime } from '@/utils/formatters';
 import { useState } from 'react';
 
-export const Header = () => {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export const Header = ({ onMenuClick }: HeaderProps) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const toast = useToast();
@@ -176,31 +180,42 @@ export const Header = () => {
       as="header"
       pos="fixed"
       top="0"
-      left="260px"
+      left={{ base: 0, md: '260px' }}
       right="0"
       h="70px"
       bg="white"
       borderBottom="1px"
       borderColor="gray.200"
-      px={8}
+      px={{ base: 4, md: 8 }}
       zIndex={10}
     >
       <Flex h="full" align="center" justify="space-between">
-        <Box>
-          <Text fontSize="lg" fontWeight="600">
-            Welcome back, {profile?.first_name}!
-          </Text>
-          <Text fontSize="sm" color="gray.500">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </Text>
-        </Box>
-
         <HStack spacing={4}>
+          {/* Hamburger Menu for Mobile */}
+          <IconButton
+            icon={<FiMenu size={24} />}
+            variant="ghost"
+            aria-label="Open menu"
+            onClick={onMenuClick}
+            display={{ base: 'flex', md: 'none' }}
+          />
+
+          <Box>
+            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="600">
+              Welcome back, {profile?.first_name}!
+            </Text>
+            <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.500" display={{ base: 'none', sm: 'block' }}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </Box>
+        </HStack>
+
+        <HStack spacing={{ base: 2, md: 4 }}>
           {/* Notifications */}
           <Box position="relative">
             <IconButton
@@ -208,6 +223,7 @@ export const Header = () => {
               variant="ghost"
               aria-label="Notifications"
               onClick={onNotificationsOpen}
+              size={{ base: 'sm', md: 'md' }}
             />
             {unreadCount > 0 && (
               <Badge
@@ -258,7 +274,7 @@ export const Header = () => {
       </Flex>
 
       {/* Notifications Modal */}
-      <Modal isOpen={isNotificationsOpen} onClose={onNotificationsClose} size="4xl">
+      <Modal isOpen={isNotificationsOpen} onClose={onNotificationsClose} size={{ base: 'full', md: '4xl' }}>
         <ModalOverlay />
         <ModalContent maxH="80vh">
           <ModalHeader>

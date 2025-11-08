@@ -161,14 +161,14 @@ export const DashboardPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
         <Box>
-          <Heading size="lg" mb={2}>
+          <Heading size={{ base: "md", md: "lg" }} mb={2}>
             Dashboard
           </Heading>
-          <Text color="gray.600">Welcome back! Here's your financial overview.</Text>
+          <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Welcome back! Here's your financial overview.</Text>
         </Box>
 
         {/* KYC Alert */}
@@ -195,43 +195,63 @@ export const DashboardPage = () => {
         <Card bgGradient="linear(to-br, brand.500, brand.700)" color="white" shadow="xl">
           <CardBody>
             <VStack align="stretch" spacing={4}>
-              <HStack justify="space-between">
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="sm" opacity={0.9}>
+              <HStack justify="space-between" align="start">
+                <VStack align="start" spacing={1} flex="1" minW={0}>
+                  <Text fontSize={{ base: "xs", md: "sm" }} opacity={0.9}>
                     Total Balance
                   </Text>
-                  <Heading size="2xl">
+                  <Heading
+                    size={{ base: "lg", md: "2xl" }}
+                    wordBreak="break-word"
+                    overflowWrap="break-word"
+                    lineHeight="shorter"
+                  >
                     {formatCurrency(ngnBalance.total_balance, 'NGN')}
                   </Heading>
-                  <Text fontSize="sm" opacity={0.8}>
+                  <Text fontSize={{ base: "xs", md: "sm" }} opacity={0.8}>
                     Across {walletData?.wallet_count || 0} wallet{walletData?.wallet_count !== 1 ? 's' : ''}
                   </Text>
                 </VStack>
-                <Icon as={MdAccountBalanceWallet} boxSize={16} opacity={0.2} />
+                <Icon
+                  as={MdAccountBalanceWallet}
+                  boxSize={{ base: 10, md: 16 }}
+                  opacity={0.2}
+                  flexShrink={0}
+                />
               </HStack>
 
               <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4} pt={4} borderTop="1px" borderColor="whiteAlpha.300">
-                <Box>
+                <Box minW={0}>
                   <Text fontSize="xs" opacity={0.8} mb={1}>
                     Available
                   </Text>
-                  <Text fontSize="lg" fontWeight="bold">
+                  <Text
+                    fontSize={{ base: "sm", md: "lg" }}
+                    fontWeight="bold"
+                    wordBreak="break-word"
+                    overflowWrap="break-word"
+                  >
                     {formatCurrency(ngnBalance.total_available, 'NGN')}
                   </Text>
                 </Box>
-                <Box>
+                <Box minW={0}>
                   <Text fontSize="xs" opacity={0.8} mb={1}>
                     On Hold
                   </Text>
-                  <Text fontSize="lg" fontWeight="bold">
+                  <Text
+                    fontSize={{ base: "sm", md: "lg" }}
+                    fontWeight="bold"
+                    wordBreak="break-word"
+                    overflowWrap="break-word"
+                  >
                     {formatCurrency(totalHolds, 'NGN')}
                   </Text>
                 </Box>
-                <Box>
+                <Box minW={0}>
                   <Text fontSize="xs" opacity={0.8} mb={1}>
                     Active Wallets
                   </Text>
-                  <Text fontSize="lg" fontWeight="bold">
+                  <Text fontSize={{ base: "sm", md: "lg" }} fontWeight="bold">
                     {ngnBalance.wallet_count}
                   </Text>
                 </Box>
@@ -242,7 +262,7 @@ export const DashboardPage = () => {
 
         {/* Quick Actions */}
         <Box>
-          <Heading size="md" mb={4}>
+          <Heading size={{ base: "sm", md: "md" }} mb={4}>
             Quick Actions
           </Heading>
           <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
@@ -254,18 +274,18 @@ export const DashboardPage = () => {
                 _hover={{ transform: 'translateY(-4px)', shadow: 'lg' }}
                 onClick={action.onClick}
               >
-                <CardBody>
-                  <VStack spacing={3}>
+                <CardBody py={{ base: 4, md: 6 }}>
+                  <VStack spacing={{ base: 2, md: 3 }}>
                     <Icon
                       as={action.icon}
-                      boxSize={8}
+                      boxSize={{ base: 6, md: 8 }}
                       color={`${action.color}.500`}
                     />
                     <VStack spacing={1}>
-                      <Text fontWeight="600" fontSize="sm">
+                      <Text fontWeight="600" fontSize={{ base: "xs", md: "sm" }}>
                         {action.label}
                       </Text>
-                      <Text fontSize="xs" color="gray.500" textAlign="center">
+                      <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" textAlign="center">
                         {action.description}
                       </Text>
                     </VStack>
@@ -408,9 +428,9 @@ export const DashboardPage = () => {
         <Card>
           <CardBody>
             <HStack justify="space-between" mb={4}>
-              <Heading size="sm">Recent Transactions</Heading>
+              <Heading size={{ base: "xs", md: "sm" }}>Recent Transactions</Heading>
               <Button
-                size="sm"
+                size={{ base: "xs", md: "sm" }}
                 variant="ghost"
                 rightIcon={<Icon as={FiArrowUpRight} />}
                 onClick={() => navigate('/transactions')}
@@ -426,16 +446,17 @@ export const DashboardPage = () => {
                 ))}
               </VStack>
             ) : transactions.length > 0 ? (
-              <Table variant="simple">
-                <Thead>
-                  <Tr>
-                    <Th>Type</Th>
-                    <Th>Reference</Th>
-                    <Th>Amount</Th>
-                    <Th>Status</Th>
-                    <Th>Date</Th>
-                  </Tr>
-                </Thead>
+              <Box overflowX="auto">
+                <Table variant="simple" size={{ base: "sm", md: "md" }}>
+                  <Thead>
+                    <Tr>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Type</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Reference</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Amount</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }}>Status</Th>
+                      <Th fontSize={{ base: "xs", md: "sm" }} display={{ base: "none", md: "table-cell" }}>Date</Th>
+                    </Tr>
+                  </Thead>
                 <Tbody>
                   {transactions.map((transaction: any) => {
                     // Determine if transaction is credit (incoming) or debit (outgoing)
@@ -445,30 +466,31 @@ export const DashboardPage = () => {
 
                     return (
                       <Tr key={transaction.transaction_id}>
-                        <Td>
-                          <HStack>
+                        <Td fontSize={{ base: "xs", md: "sm" }}>
+                          <HStack spacing={{ base: 1, md: 2 }}>
                             <Icon
                               as={isCredit ? FiArrowDownRight : FiArrowUpRight}
                               color={isCredit ? 'green.500' : 'red.500'}
+                              boxSize={{ base: 3, md: 4 }}
                             />
-                            <Text textTransform="capitalize">{transaction.transaction_type?.replace(/_/g, ' ')}</Text>
+                            <Text textTransform="capitalize" isTruncated maxW={{ base: "80px", md: "none" }}>{transaction.transaction_type?.replace(/_/g, ' ')}</Text>
                           </HStack>
                         </Td>
-                        <Td fontFamily="mono" fontSize="sm">
+                        <Td fontFamily="mono" fontSize={{ base: "xs", md: "sm" }} isTruncated maxW={{ base: "100px", md: "none" }}>
                           {transaction.reference || '-'}
                         </Td>
-                        <Td fontWeight="600">
+                        <Td fontWeight="600" fontSize={{ base: "xs", md: "sm" }}>
                           <Text color={isCredit ? 'green.600' : 'red.600'}>
                             {isCredit ? '+' : '-'}
                             {formatCurrency(transaction.amount, transaction.currency_code || 'NGN')}
                           </Text>
                         </Td>
                         <Td>
-                          <Badge colorScheme={getStatusColor(transaction.status)}>
+                          <Badge colorScheme={getStatusColor(transaction.status)} fontSize={{ base: "2xs", md: "xs" }}>
                             {transaction.status}
                           </Badge>
                         </Td>
-                        <Td fontSize="sm" color="gray.600">
+                        <Td fontSize={{ base: "xs", md: "sm" }} color="gray.600" display={{ base: "none", md: "table-cell" }}>
                           {formatRelativeTime(transaction.initiated_at)}
                         </Td>
                       </Tr>
@@ -476,6 +498,7 @@ export const DashboardPage = () => {
                   })}
                 </Tbody>
               </Table>
+              </Box>
             ) : (
               <EmptyState
                 icon={FiFileText}

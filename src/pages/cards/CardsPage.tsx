@@ -5,6 +5,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Button,
   Badge,
   Icon,
@@ -387,20 +388,20 @@ export const CardsPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
-        <HStack justify="space-between">
+        <Stack direction={{ base: "column", md: "row" }} justify="space-between" spacing={{ base: 4, md: 0 }} align={{ base: "stretch", md: "center" }}>
           <Box>
-            <Heading size="lg" mb={2}>
+            <Heading size={{ base: "md", md: "lg" }} mb={2}>
               My Cards
             </Heading>
-            <Text color="gray.600">Manage your virtual and physical cards</Text>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>Manage your virtual and physical cards</Text>
           </Box>
-          <Button leftIcon={<Icon as={FiPlus} />} colorScheme="brand" onClick={onCreateOpen}>
+          <Button leftIcon={<Icon as={FiPlus} />} colorScheme="brand" onClick={onCreateOpen} size={{ base: "sm", md: "md" }} width={{ base: "full", md: "auto" }}>
             Create Card
           </Button>
-        </HStack>
+        </Stack>
 
         {/* Cards Grid */}
         {cards.length > 0 ? (
@@ -616,7 +617,7 @@ export const CardsPage = () => {
       </VStack>
 
       {/* Create Card Modal */}
-      <Modal isOpen={isCreateOpen} onClose={onCreateClose} size="lg">
+      <Modal isOpen={isCreateOpen} onClose={onCreateClose} size={{ base: "full", sm: "md", md: "lg" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={createForm.handleSubmit(handleCreate)}>
@@ -685,7 +686,7 @@ export const CardsPage = () => {
       </Modal>
 
       {/* Fund Card Modal */}
-      <Modal isOpen={isFundOpen} onClose={onFundClose}>
+      <Modal isOpen={isFundOpen} onClose={onFundClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <form onSubmit={fundForm.handleSubmit(handleFund)}>
@@ -727,7 +728,7 @@ export const CardsPage = () => {
       </Modal>
 
       {/* Card Controls Modal */}
-      <Modal isOpen={isControlsOpen} onClose={onControlsClose}>
+      <Modal isOpen={isControlsOpen} onClose={onControlsClose} size={{ base: "full", sm: "md" }}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Card Controls</ModalHeader>
@@ -800,7 +801,7 @@ export const CardsPage = () => {
       </Modal>
 
       {/* Card Details Modal */}
-      <Modal isOpen={isDetailsOpen} onClose={onDetailsClose} size="xl">
+      <Modal isOpen={isDetailsOpen} onClose={onDetailsClose} size={{ base: "full", sm: "lg", md: "xl" }}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Card Transactions</ModalHeader>

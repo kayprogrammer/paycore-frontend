@@ -5,6 +5,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Card,
   CardBody,
   Button,
@@ -452,60 +453,62 @@ export const LoansPage = () => {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
+    <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         {/* Header */}
-        <Box>
-          <Heading size="lg" mb={2}>
-            Loans
-          </Heading>
-          <Text color="gray.600">Access quick loans and manage repayments</Text>
-        </Box>
+        <Stack direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'center' }} spacing={{ base: 2, md: 0 }}>
+          <Box>
+            <Heading size={{ base: 'md', md: 'lg' }} mb={2}>
+              Loans
+            </Heading>
+            <Text color="gray.600" fontSize={{ base: 'sm', md: 'md' }}>Access quick loans and manage repayments</Text>
+          </Box>
+        </Stack>
 
         {/* Processing Progress Card */}
         {processingLoanId && (
           <Card bg="blue.50" borderColor="blue.200" borderWidth="2px">
             <CardBody>
               <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
+                <Stack direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} spacing={{ base: 2, sm: 0 }}>
                   <HStack spacing={2}>
-                    <Icon as={FiClock} color="blue.600" boxSize={5} />
-                    <Heading size="sm" color="blue.800">
+                    <Icon as={FiClock} color="blue.600" boxSize={{ base: 4, md: 5 }} />
+                    <Heading size={{ base: 'xs', md: 'sm' }} color="blue.800">
                       Processing Your Loan
                     </Heading>
                   </HStack>
-                  <Badge colorScheme="blue" fontSize="sm">
+                  <Badge colorScheme="blue" fontSize={{ base: 'xs', md: 'sm' }}>
                     {processingProgress}%
                   </Badge>
-                </HStack>
+                </Stack>
 
-                <Text fontSize="sm" color="blue.700">
+                <Text fontSize={{ base: 'xs', md: 'sm' }} color="blue.700">
                   {processingStatus}
                 </Text>
 
                 <Progress
                   value={processingProgress}
-                  size="lg"
+                  size={{ base: 'md', md: 'lg' }}
                   colorScheme="blue"
                   hasStripe
                   isAnimated
                   borderRadius="md"
                 />
 
-                <HStack spacing={4} fontSize="xs" color="blue.600">
+                <Stack direction={{ base: 'column', sm: 'row' }} spacing={{ base: 2, sm: 4 }} fontSize={{ base: '2xs', md: 'xs' }} color="blue.600">
                   <HStack spacing={1}>
-                    <Icon as={processingProgress >= 10 ? FiCheckCircle : FiClock} />
+                    <Icon as={processingProgress >= 10 ? FiCheckCircle : FiClock} boxSize={{ base: 3, md: 4 }} />
                     <Text>Submitted</Text>
                   </HStack>
                   <HStack spacing={1}>
-                    <Icon as={processingProgress >= 70 ? FiCheckCircle : FiClock} />
+                    <Icon as={processingProgress >= 70 ? FiCheckCircle : FiClock} boxSize={{ base: 3, md: 4 }} />
                     <Text>Approved</Text>
                   </HStack>
                   <HStack spacing={1}>
-                    <Icon as={processingProgress >= 100 ? FiCheckCircle : FiClock} />
+                    <Icon as={processingProgress >= 100 ? FiCheckCircle : FiClock} boxSize={{ base: 3, md: 4 }} />
                     <Text>Disbursed</Text>
                   </HStack>
-                </HStack>
+                </Stack>
               </VStack>
             </CardBody>
           </Card>
@@ -513,13 +516,13 @@ export const LoansPage = () => {
 
         {/* Summary Cards */}
         {summary && (
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={{ base: 4, md: 6 }}>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Active Loans</StatLabel>
-                  <StatNumber>{summary.active_loans}</StatNumber>
-                  <StatHelpText>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Active Loans</StatLabel>
+                  <StatNumber fontSize={{ base: 'xl', md: '2xl' }}>{summary.active_loans}</StatNumber>
+                  <StatHelpText fontSize={{ base: '2xs', md: 'xs' }}>
                     {formatCurrency(summary.outstanding_balance, 'NGN')} outstanding
                   </StatHelpText>
                 </Stat>
@@ -528,33 +531,33 @@ export const LoansPage = () => {
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Total Borrowed</StatLabel>
-                  <StatNumber fontSize="xl">
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Total Borrowed</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }}>
                     {formatCurrency(summary.total_borrowed, 'NGN')}
                   </StatNumber>
-                  <StatHelpText>All time</StatHelpText>
+                  <StatHelpText fontSize={{ base: '2xs', md: 'xs' }}>All time</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Total Repaid</StatLabel>
-                  <StatNumber fontSize="xl">
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Total Repaid</StatLabel>
+                  <StatNumber fontSize={{ base: 'lg', md: 'xl' }}>
                     {formatCurrency(summary.total_repaid, 'NGN')}
                   </StatNumber>
-                  <StatHelpText>All time</StatHelpText>
+                  <StatHelpText fontSize={{ base: '2xs', md: 'xs' }}>All time</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel>Credit Score</StatLabel>
-                  <StatNumber color={creditScore?.score >= 700 ? 'green.500' : 'orange.500'}>
+                  <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Credit Score</StatLabel>
+                  <StatNumber fontSize={{ base: 'xl', md: '2xl' }} color={creditScore?.score >= 700 ? 'green.500' : 'orange.500'}>
                     {creditScore?.score || 'N/A'}
                   </StatNumber>
-                  <StatHelpText>{creditScore?.grade || 'Not rated'}</StatHelpText>
+                  <StatHelpText fontSize={{ base: '2xs', md: 'xs' }}>{creditScore?.grade || 'Not rated'}</StatHelpText>
                 </Stat>
               </CardBody>
             </Card>
@@ -584,29 +587,29 @@ export const LoansPage = () => {
                         <CardBody>
                           <VStack align="stretch" spacing={4}>
                             <HStack justify="space-between">
-                              <Heading size="md">{product.name}</Heading>
-                              <Icon as={FiDollarSign} boxSize={6} color="brand.500" />
+                              <Heading size={{ base: 'sm', md: 'md' }}>{product.name}</Heading>
+                              <Icon as={FiDollarSign} boxSize={{ base: 5, md: 6 }} color="brand.500" />
                             </HStack>
 
-                            <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                            <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" noOfLines={2}>
                               {product.description}
                             </Text>
 
                             <VStack align="stretch" spacing={2}>
-                              <HStack justify="space-between" fontSize="sm">
+                              <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                                 <Text color="gray.600">Amount Range</Text>
                                 <Text fontWeight="600">
                                   {formatCurrency(product.min_amount, 'NGN')} -{' '}
                                   {formatCurrency(product.max_amount, 'NGN')}
                                 </Text>
                               </HStack>
-                              <HStack justify="space-between" fontSize="sm">
+                              <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                                 <Text color="gray.600">Interest Rate</Text>
                                 <Text fontWeight="600" color="brand.500">
                                   {product.interest_rate}% p.a.
                                 </Text>
                               </HStack>
-                              <HStack justify="space-between" fontSize="sm">
+                              <HStack justify="space-between" fontSize={{ base: 'xs', md: 'sm' }}>
                                 <Text color="gray.600">Tenure</Text>
                                 <Text fontWeight="600">
                                   {product.min_tenure_months} - {product.max_tenure_months} months
@@ -614,9 +617,9 @@ export const LoansPage = () => {
                               </HStack>
                             </VStack>
 
-                            <HStack spacing={2}>
+                            <Stack direction={{ base: 'column', sm: 'row' }} spacing={2}>
                               <Button
-                                size="sm"
+                                size={{ base: 'xs', md: 'sm' }}
                                 variant="outline"
                                 flex={1}
                                 onClick={() => openCalculatorModal(product)}
@@ -624,14 +627,14 @@ export const LoansPage = () => {
                                 Calculate
                               </Button>
                               <Button
-                                size="sm"
+                                size={{ base: 'xs', md: 'sm' }}
                                 colorScheme="brand"
                                 flex={1}
                                 onClick={() => openApplyModal(product)}
                               >
                                 Apply Now
                               </Button>
-                            </HStack>
+                            </Stack>
                           </VStack>
                         </CardBody>
                       </Card>
@@ -657,62 +660,62 @@ export const LoansPage = () => {
                     <Card key={loan.application_id}>
                       <CardBody>
                         <VStack align="stretch" spacing={4}>
-                          <HStack justify="space-between">
+                          <Stack direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} spacing={{ base: 2, sm: 0 }}>
                             <VStack align="start" spacing={1}>
-                              <Heading size="sm">{loan.loan_product_name}</Heading>
-                              <Text fontSize="sm" color="gray.600">
+                              <Heading size={{ base: 'xs', md: 'sm' }}>{loan.loan_product_name}</Heading>
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">
                                 ID: {loan.application_id.slice(0, 8)}...
                               </Text>
                             </VStack>
                             <Badge
                               colorScheme={getStatusColor(loan.status)}
-                              fontSize="sm"
+                              fontSize={{ base: 'xs', md: 'sm' }}
                               px={3}
                               py={1}
                             >
                               {loan.status}
                             </Badge>
-                          </HStack>
+                          </Stack>
 
-                          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                          <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={4}>
                             <Box>
-                              <Text fontSize="xs" color="gray.600" mb={1}>
+                              <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mb={1}>
                                 Requested Amount
                               </Text>
-                              <Text fontWeight="600">
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>
                                 {formatCurrency(loan.requested_amount, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
-                              <Text fontSize="xs" color="gray.600" mb={1}>
+                              <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mb={1}>
                                 {loan.approved_amount ? 'Approved Amount' : 'Total Repayable'}
                               </Text>
-                              <Text fontWeight="600" color={loan.approved_amount ? 'green.600' : 'gray.600'}>
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }} color={loan.approved_amount ? 'green.600' : 'gray.600'}>
                                 {formatCurrency(loan.approved_amount || loan.total_repayable, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
-                              <Text fontSize="xs" color="gray.600" mb={1}>
+                              <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mb={1}>
                                 Monthly Payment
                               </Text>
-                              <Text fontWeight="600">
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>
                                 {formatCurrency(loan.monthly_repayment, loan.currency?.code || 'NGN')}
                               </Text>
                             </Box>
                             <Box>
-                              <Text fontSize="xs" color="gray.600" mb={1}>
+                              <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mb={1}>
                                 Tenure
                               </Text>
-                              <Text fontWeight="600">{loan.tenure_months} months</Text>
+                              <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>{loan.tenure_months} months</Text>
                             </Box>
                           </SimpleGrid>
 
                           <Box>
                             <HStack justify="space-between" mb={2}>
-                              <Text fontSize="sm" color="gray.600">
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600">
                                 Status
                               </Text>
-                              <Text fontSize="sm" fontWeight="600">
+                              <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="600">
                                 {loan.disbursed_at ? `Disbursed ${formatDate(loan.disbursed_at)}` : 'Pending Approval'}
                               </Text>
                             </HStack>
@@ -723,25 +726,25 @@ export const LoansPage = () => {
                             />
                           </Box>
 
-                          <HStack spacing={2} flexWrap="wrap">
+                          <Stack direction={{ base: 'column', sm: 'row' }} spacing={2}>
                             {loan.status === 'active' && (
                               <>
                                 <Button
-                                  size="sm"
+                                  size={{ base: 'xs', md: 'sm' }}
                                   colorScheme="brand"
                                   onClick={() => openRepayModal(loan)}
                                 >
                                   Make Payment
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => openScheduleModal(loan)}>
+                                <Button size={{ base: 'xs', md: 'sm' }} variant="outline" onClick={() => openScheduleModal(loan)}>
                                   View Schedule
                                 </Button>
                               </>
                             )}
-                            <Button size="sm" variant="ghost">
+                            <Button size={{ base: 'xs', md: 'sm' }} variant="ghost">
                               View Details
                             </Button>
-                          </HStack>
+                          </Stack>
                         </VStack>
                       </CardBody>
                     </Card>
@@ -760,15 +763,15 @@ export const LoansPage = () => {
       </VStack>
 
       {/* Loan Calculator Modal */}
-      <Modal isOpen={isCalculatorOpen} onClose={onCalculatorClose} size="lg">
+      <Modal isOpen={isCalculatorOpen} onClose={onCalculatorClose} size={{ base: 'full', md: 'lg' }}>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Loan Calculator - {selectedProduct?.name}</ModalHeader>
+        <ModalContent mx={{ base: 0, md: 4 }}>
+          <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Loan Calculator - {selectedProduct?.name}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={6} align="stretch">
               <FormControl>
-                <FormLabel>Loan Amount: {formatCurrency(loanAmount, 'NGN')}</FormLabel>
+                <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Loan Amount: {formatCurrency(loanAmount, 'NGN')}</FormLabel>
                 <Slider
                   aria-label="loan-amount-slider"
                   value={loanAmount}
@@ -782,20 +785,20 @@ export const LoansPage = () => {
                   <SliderTrack>
                     <SliderFilledTrack />
                   </SliderTrack>
-                  <SliderThumb />
+                  <SliderThumb boxSize={{ base: 4, md: 6 }} />
                 </Slider>
-                <HStack justify="space-between" mt={2}>
-                  <Text fontSize="xs" color="gray.600">
-                    {formatCurrency(Number(selectedProduct?.min_amount) || 1000, 'NGN')}
+                <Stack direction={{ base: 'column', sm: 'row' }} justify="space-between" mt={2} spacing={{ base: 1, sm: 0 }}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600">
+                    Min: {formatCurrency(Number(selectedProduct?.min_amount) || 1000, 'NGN')}
                   </Text>
-                  <Text fontSize="xs" color="gray.600">
-                    {formatCurrency(Number(selectedProduct?.max_amount) || 1000000, 'NGN')}
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600">
+                    Max: {formatCurrency(Number(selectedProduct?.max_amount) || 1000000, 'NGN')}
                   </Text>
-                </HStack>
+                </Stack>
               </FormControl>
 
               <FormControl>
-                <FormLabel>Tenure: {loanTenure} months</FormLabel>
+                <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Tenure: {loanTenure} months</FormLabel>
                 <Slider
                   aria-label="loan-tenure-slider"
                   value={loanTenure}
@@ -808,15 +811,16 @@ export const LoansPage = () => {
                   <SliderTrack>
                     <SliderFilledTrack />
                   </SliderTrack>
-                  <SliderThumb />
+                  <SliderThumb boxSize={{ base: 4, md: 6 }} />
                 </Slider>
               </FormControl>
 
               <FormControl>
-                <FormLabel>Repayment Frequency</FormLabel>
+                <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Repayment Frequency</FormLabel>
                 <Select
                   value={repaymentFrequency}
                   onChange={(e) => setRepaymentFrequency(e.target.value)}
+                  fontSize={{ base: 'sm', md: 'md' }}
                 >
                   <option value="weekly">Weekly</option>
                   <option value="bi_weekly">Bi-Weekly</option>
@@ -825,7 +829,7 @@ export const LoansPage = () => {
                 </Select>
               </FormControl>
 
-              <Button onClick={handleCalculate} isLoading={calculating} colorScheme="brand">
+              <Button onClick={handleCalculate} isLoading={calculating} colorScheme="brand" size={{ base: 'sm', md: 'md' }}>
                 Calculate
               </Button>
 
@@ -833,29 +837,29 @@ export const LoansPage = () => {
                 <Card bg="brand.50">
                   <CardBody>
                     <VStack align="stretch" spacing={3}>
-                      <Heading size="sm">Loan Breakdown</Heading>
+                      <Heading size={{ base: 'xs', md: 'sm' }}>Loan Breakdown</Heading>
                       <HStack justify="space-between">
-                        <Text color="gray.600">Principal</Text>
-                        <Text fontWeight="600">
+                        <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Principal</Text>
+                        <Text fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>
                           {formatCurrency(calculatedLoan.requested_amount || calculatedLoan.approved_amount, 'NGN')}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text color="gray.600">Interest ({selectedProduct?.interest_rate}%)</Text>
-                        <Text fontWeight="600">
+                        <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Interest ({selectedProduct?.interest_rate}%)</Text>
+                        <Text fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>
                           {formatCurrency(calculatedLoan.total_interest, 'NGN')}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontWeight="600">Total Repayment</Text>
-                        <Text fontWeight="bold" fontSize="lg" color="brand.600">
+                        <Text fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>Total Repayment</Text>
+                        <Text fontWeight="bold" fontSize={{ base: 'md', md: 'lg' }} color="brand.600">
                           {formatCurrency(calculatedLoan.total_repayable, 'NGN')}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text fontWeight="600">Monthly Payment</Text>
-                        <Text fontWeight="bold" fontSize="lg">
+                        <Text fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>Monthly Payment</Text>
+                        <Text fontWeight="bold" fontSize={{ base: 'md', md: 'lg' }}>
                           {formatCurrency(calculatedLoan.monthly_repayment || calculatedLoan.installment_amount, 'NGN')}
                         </Text>
                       </HStack>
@@ -866,65 +870,69 @@ export const LoansPage = () => {
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onCalculatorClose}>
-              Close
-            </Button>
-            <Button colorScheme="brand" onClick={() => {
-              onCalculatorClose();
-              openApplyModal(selectedProduct);
-            }}>
-              Apply for This Loan
-            </Button>
+            <Stack direction={{ base: 'column', sm: 'row' }} spacing={2} w={{ base: 'full', sm: 'auto' }}>
+              <Button variant="ghost" onClick={onCalculatorClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                Close
+              </Button>
+              <Button colorScheme="brand" onClick={() => {
+                onCalculatorClose();
+                openApplyModal(selectedProduct);
+              }} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                Apply for This Loan
+              </Button>
+            </Stack>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
       {/* Apply for Loan Modal */}
-      <Modal isOpen={isApplyOpen} onClose={onApplyClose} size="lg">
+      <Modal isOpen={isApplyOpen} onClose={onApplyClose} size={{ base: 'full', md: 'lg' }}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent mx={{ base: 0, md: 4 }}>
           <form onSubmit={applyForm.handleSubmit(handleApply)}>
-            <ModalHeader>Apply for Loan</ModalHeader>
+            <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Apply for Loan</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Loan Amount</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Loan Amount</FormLabel>
                   <NumberInput
                     min={selectedProduct?.min_amount}
                     max={selectedProduct?.max_amount}
+                    size={{ base: 'sm', md: 'md' }}
                   >
                     <NumberInputField
                       {...applyForm.register('amount', { valueAsNumber: true })}
                       placeholder="Enter amount"
                     />
                   </NumberInput>
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Min: {formatCurrency(selectedProduct?.min_amount, 'NGN')} | Max:{' '}
                     {formatCurrency(selectedProduct?.max_amount, 'NGN')}
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Tenure (Months)</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Tenure (Months)</FormLabel>
                   <NumberInput
                     min={selectedProduct?.min_tenure_months}
                     max={selectedProduct?.max_tenure_months}
+                    size={{ base: 'sm', md: 'md' }}
                   >
                     <NumberInputField
                       {...applyForm.register('tenure_months', { valueAsNumber: true })}
                       placeholder="Enter tenure"
                     />
                   </NumberInput>
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Min: {selectedProduct?.min_tenure_months} | Max:{' '}
                     {selectedProduct?.max_tenure_months} months
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Repayment Frequency</FormLabel>
-                  <Select {...applyForm.register('repayment_frequency')} placeholder="Select frequency">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Repayment Frequency</FormLabel>
+                  <Select {...applyForm.register('repayment_frequency')} placeholder="Select frequency" size={{ base: 'sm', md: 'md' }}>
                     <option value="weekly">Weekly</option>
                     <option value="bi_weekly">Bi-Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -933,8 +941,8 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Collateral Type</FormLabel>
-                  <Select {...applyForm.register('collateral_type')} placeholder="Select collateral">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Collateral Type</FormLabel>
+                  <Select {...applyForm.register('collateral_type')} placeholder="Select collateral" size={{ base: 'sm', md: 'md' }}>
                     <option value="none">No Collateral</option>
                     <option value="property">Property</option>
                     <option value="vehicle">Vehicle</option>
@@ -945,56 +953,59 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Collateral Value</FormLabel>
-                  <NumberInput min={0}>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Collateral Value</FormLabel>
+                  <NumberInput min={0} size={{ base: 'sm', md: 'md' }}>
                     <NumberInputField
                       {...applyForm.register('collateral_value', { valueAsNumber: true })}
                       placeholder="Enter collateral value"
                     />
                   </NumberInput>
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Estimated value of collateral (set to 0 if no collateral)
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Guarantor Name</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Guarantor Name</FormLabel>
                   <Input
                     {...applyForm.register('guarantor_name')}
                     placeholder="Enter guarantor's full name"
+                    size={{ base: 'sm', md: 'md' }}
                   />
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Full name of your loan guarantor
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Guarantor Phone</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Guarantor Phone</FormLabel>
                   <Input
                     {...applyForm.register('guarantor_phone')}
                     placeholder="Enter guarantor's phone number"
                     type="tel"
+                    size={{ base: 'sm', md: 'md' }}
                   />
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Valid phone number of your guarantor
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Guarantor Email</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Guarantor Email</FormLabel>
                   <Input
                     {...applyForm.register('guarantor_email')}
                     placeholder="Enter guarantor's email address"
                     type="email"
+                    size={{ base: 'sm', md: 'md' }}
                   />
-                  <Text fontSize="xs" color="gray.600" mt={1}>
+                  <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600" mt={1}>
                     Valid email address of your guarantor
                   </Text>
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Purpose</FormLabel>
-                  <Select {...applyForm.register('purpose')} placeholder="Select purpose">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Purpose</FormLabel>
+                  <Select {...applyForm.register('purpose')} placeholder="Select purpose" size={{ base: 'sm', md: 'md' }}>
                     <option value="business">Business</option>
                     <option value="personal">Personal</option>
                     <option value="education">Education</option>
@@ -1005,8 +1016,8 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Disbursement Wallet</FormLabel>
-                  <Select {...applyForm.register('wallet_id')} placeholder="Select wallet">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Disbursement Wallet</FormLabel>
+                  <Select {...applyForm.register('wallet_id')} placeholder="Select wallet" size={{ base: 'sm', md: 'md' }}>
                     {wallets.map((wallet: any) => (
                       <option key={wallet.wallet_id} value={wallet.wallet_id}>
                         {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
@@ -1017,23 +1028,25 @@ export const LoansPage = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onApplyClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="brand" type="submit" isLoading={applying}>
-                Submit Application
-              </Button>
+              <Stack direction={{ base: 'column', sm: 'row' }} spacing={2} w={{ base: 'full', sm: 'auto' }}>
+                <Button variant="ghost" onClick={onApplyClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                  Cancel
+                </Button>
+                <Button colorScheme="brand" type="submit" isLoading={applying} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                  Submit Application
+                </Button>
+              </Stack>
             </ModalFooter>
           </form>
         </ModalContent>
       </Modal>
 
       {/* Repayment Modal */}
-      <Modal isOpen={isRepayOpen} onClose={onRepayClose}>
+      <Modal isOpen={isRepayOpen} onClose={onRepayClose} size={{ base: 'full', md: 'md' }}>
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent mx={{ base: 0, md: 4 }}>
           <form onSubmit={repayForm.handleSubmit(handleRepayment)}>
-            <ModalHeader>Make Loan Repayment</ModalHeader>
+            <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Make Loan Repayment</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
@@ -1042,14 +1055,14 @@ export const LoansPage = () => {
                     <CardBody>
                       <VStack align="stretch" spacing={2}>
                         <HStack justify="space-between">
-                          <Text color="gray.600">Outstanding Balance</Text>
-                          <Text fontWeight="bold" color="red.600">
+                          <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Outstanding Balance</Text>
+                          <Text fontWeight="bold" color="red.600" fontSize={{ base: 'sm', md: 'md' }}>
                             {formatCurrency(selectedLoan.outstanding_balance, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
                         <HStack justify="space-between">
-                          <Text color="gray.600">Next Payment Due</Text>
-                          <Text fontWeight="600">
+                          <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Next Payment Due</Text>
+                          <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>
                             {formatCurrency(selectedLoan.monthly_payment, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
@@ -1059,8 +1072,8 @@ export const LoansPage = () => {
                 )}
 
                 <FormControl isRequired>
-                  <FormLabel>Payment Amount</FormLabel>
-                  <NumberInput min={0}>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Payment Amount</FormLabel>
+                  <NumberInput min={0} size={{ base: 'sm', md: 'md' }}>
                     <NumberInputField
                       {...repayForm.register('amount', { valueAsNumber: true })}
                       placeholder="Enter amount"
@@ -1069,8 +1082,8 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Payment Wallet</FormLabel>
-                  <Select {...repayForm.register('wallet_id')} placeholder="Select wallet">
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Payment Wallet</FormLabel>
+                  <Select {...repayForm.register('wallet_id')} placeholder="Select wallet" size={{ base: 'sm', md: 'md' }}>
                     {wallets.map((wallet: any) => (
                       <option key={wallet.wallet_id} value={wallet.wallet_id}>
                         {wallet.name} - {formatCurrency(wallet.available_balance, wallet.currency?.code || 'NGN')}
@@ -1080,39 +1093,42 @@ export const LoansPage = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Wallet PIN</FormLabel>
+                  <FormLabel fontSize={{ base: 'sm', md: 'md' }}>Wallet PIN</FormLabel>
                   <Input
                     type="password"
                     maxLength={4}
                     {...repayForm.register('pin')}
                     placeholder="Enter PIN"
+                    size={{ base: 'sm', md: 'md' }}
                   />
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onRepayClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="brand" type="submit" isLoading={repaying}>
-                Make Payment
-              </Button>
+              <Stack direction={{ base: 'column', sm: 'row' }} spacing={2} w={{ base: 'full', sm: 'auto' }}>
+                <Button variant="ghost" onClick={onRepayClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                  Cancel
+                </Button>
+                <Button colorScheme="brand" type="submit" isLoading={repaying} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>
+                  Make Payment
+                </Button>
+              </Stack>
             </ModalFooter>
           </form>
         </ModalContent>
       </Modal>
 
       {/* Repayment Schedule Modal */}
-      <Modal isOpen={isScheduleOpen} onClose={onScheduleClose} size="xl">
+      <Modal isOpen={isScheduleOpen} onClose={onScheduleClose} size={{ base: 'full', md: 'xl' }}>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Repayment Schedule</ModalHeader>
+        <ModalContent mx={{ base: 0, md: 4 }}>
+          <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Repayment Schedule</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <RepaymentSchedule loanId={selectedLoan?.id} />
           </ModalBody>
           <ModalFooter>
-            <Button onClick={onScheduleClose}>Close</Button>
+            <Button onClick={onScheduleClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>Close</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -1134,29 +1150,31 @@ const RepaymentSchedule = ({ loanId }: { loanId: string }) => {
   }
 
   return (
-    <Table variant="simple" size="sm">
-      <Thead>
-        <Tr>
-          <Th>Period</Th>
-          <Th>Due Date</Th>
-          <Th isNumeric>Amount</Th>
-          <Th>Status</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {schedule.map((item: any, index: number) => (
-          <Tr key={item.id}>
-            <Td>{index + 1}</Td>
-            <Td>{formatDate(item.due_date)}</Td>
-            <Td isNumeric fontWeight="600">
-              {formatCurrency(item.amount, item.currency?.code || 'NGN')}
-            </Td>
-            <Td>
-              <Badge colorScheme={getStatusColor(item.status)}>{item.status}</Badge>
-            </Td>
+    <Box overflowX="auto">
+      <Table variant="simple" size={{ base: 'sm', md: 'md' }}>
+        <Thead>
+          <Tr>
+            <Th fontSize={{ base: 'xs', md: 'sm' }}>Period</Th>
+            <Th fontSize={{ base: 'xs', md: 'sm' }}>Due Date</Th>
+            <Th isNumeric fontSize={{ base: 'xs', md: 'sm' }}>Amount</Th>
+            <Th fontSize={{ base: 'xs', md: 'sm' }}>Status</Th>
           </Tr>
-        ))}
-      </Tbody>
-    </Table>
+        </Thead>
+        <Tbody>
+          {schedule.map((item: any, index: number) => (
+            <Tr key={item.id}>
+              <Td fontSize={{ base: 'xs', md: 'sm' }}>{index + 1}</Td>
+              <Td fontSize={{ base: 'xs', md: 'sm' }}>{formatDate(item.due_date)}</Td>
+              <Td isNumeric fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>
+                {formatCurrency(item.amount, item.currency?.code || 'NGN')}
+              </Td>
+              <Td>
+                <Badge colorScheme={getStatusColor(item.status)} fontSize={{ base: '2xs', md: 'xs' }}>{item.status}</Badge>
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </Box>
   );
 };
