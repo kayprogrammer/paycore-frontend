@@ -4,6 +4,9 @@
  *
  * This file must be in the public directory and served at the root of your domain
  * It runs in the background even when the app is closed
+ *
+ * NOTE: Environment variables are injected at build time via vite.config.ts
+ * The placeholders below are replaced with actual values from .env files
  */
 
 // Import Firebase scripts
@@ -11,15 +14,15 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 // Initialize Firebase in service worker
-// Note: These values should match your main Firebase config
+// Config injected from environment variables at build time
 const firebaseConfig = {
-  apiKey: "AIzaSyCMaIL4BL1qbA1xj0Ot4iGmawXAO8o3PD4",
-  authDomain: "excelmind-test.firebaseapp.com",
-  projectId: "excelmind-test",
-  storageBucket: "excelmind-test.firebasestorage.app",
-  messagingSenderId: "479007511194",
-  appId: "1:479007511194:web:8ab3093de9fa4d6e934523",
-  measurementId: "G-SQ0NJDPQZT"
+  apiKey: "__VITE_FIREBASE_API_KEY__",
+  authDomain: "__VITE_FIREBASE_AUTH_DOMAIN__",
+  projectId: "__VITE_FIREBASE_PROJECT_ID__",
+  storageBucket: "__VITE_FIREBASE_STORAGE_BUCKET__",
+  messagingSenderId: "__VITE_FIREBASE_MESSAGING_SENDER_ID__",
+  appId: "__VITE_FIREBASE_APP_ID__",
+  measurementId: "__VITE_FIREBASE_MEASUREMENT_ID__"
 };
 
 firebase.initializeApp(firebaseConfig);

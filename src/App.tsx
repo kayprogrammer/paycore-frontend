@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box } from '@chakra-ui/react';
 import { useAppSelector, useAppDispatch } from '@/hooks';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { selectIsAuthenticated } from '@/store/slices/authSlice';
 import { selectIsServerAvailable, setServerAvailable } from '@/store/slices/serverStatusSlice';
 import { ServerUnavailable } from '@/components/common/ServerUnavailable';
@@ -74,6 +75,9 @@ function App() {
 
   // Perform health check when app loads
   useHealthCheck();
+
+  // Handle foreground push notifications
+  usePushNotifications();
 
   const handleRetry = () => {
     dispatch(setServerAvailable());

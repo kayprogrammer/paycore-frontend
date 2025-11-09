@@ -83,14 +83,14 @@ export const loansApi = baseApi.injectEndpoints({
 
     // 8. Get Repayment Schedule
     getRepaymentSchedule: builder.query<ApiResponse<LoanRepaymentSchedule[]>, string>({
-      query: (loanId) => `/loans/applications/application/${loanId}/schedule`,
+      query: (loanId) => `/loans/applications/${loanId}/schedule`,
       providesTags: ['Loans'],
     }),
 
     // 9. Make Repayment
     makeRepayment: builder.mutation<ApiResponse<LoanRepayment>, MakeRepaymentRequest>({
       query: (data) => ({
-        url: `/loans/applications/${data.application_id}/repayments`,
+        url: `/loans/applications/${data.application_id}/repay`,
         method: 'POST',
         body: data,
       }),

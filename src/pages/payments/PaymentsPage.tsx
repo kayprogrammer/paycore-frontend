@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -54,6 +54,12 @@ import {
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
 import {
   FiPlus,
@@ -86,6 +92,7 @@ export const PaymentsPage = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState(0);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Search states
   const [linkSearch, setLinkSearch] = useState('');
@@ -107,6 +114,14 @@ export const PaymentsPage = () => {
     onClose: onInvoiceClose,
   } = useDisclosure();
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+
+  // Delete confirmation modal
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
   // API Queries
   const { data: walletsData } = useListWalletsQuery();
@@ -265,6 +280,34 @@ export const PaymentsPage = () => {
       toast({
         title: 'Error',
         description: error?.data?.message || 'Failed to create invoice',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
+  const openDeleteConfirmation = (invoiceId: string) => {
+    setInvoiceToDelete(invoiceId);
+    onDeleteOpen();
+  };
+
+  const confirmDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+
+    try {
+      await deleteInvoice(invoiceToDelete).unwrap();
+      toast({
+        title: 'Invoice Deleted',
+        description: 'The invoice has been successfully deleted.',
+        status: 'success',
+        duration: 3000,
+      });
+      onDeleteClose();
+      setInvoiceToDelete(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.data?.message || 'Failed to delete invoice',
         status: 'error',
         duration: 5000,
       });
@@ -615,9 +658,16 @@ export const PaymentsPage = () => {
                                 size="sm"
                               />
                               <MenuList>
-                                <MenuItem icon={<FiExternalLink />}>View</MenuItem>
-                                <MenuItem icon={<FiEdit />}>Edit</MenuItem>
-                                <MenuItem icon={<FiTrash2 />} color="red.500">
+                                <MenuItem icon={<FiExternalLink />} onClick={() => window.open(`${window.location.origin}/invoice/${invoice.invoice_id}`, '_blank')}>
+                                  View Invoice
+                                </MenuItem>
+                                <MenuItem icon={<FiCopy />} onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/invoice/${invoice.invoice_id}`);
+                                  toast({ title: 'Link Copied', status: 'success', duration: 2000 });
+                                }}>
+                                  Copy Link
+                                </MenuItem>
+                                <MenuItem icon={<FiTrash2 />} color="red.500" onClick={() => openDeleteConfirmation(invoice.invoice_id)}>
                                   Delete
                                 </MenuItem>
                               </MenuList>
@@ -1051,6 +1101,34 @@ export const PaymentsPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isDeleteOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onDeleteClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Invoice
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete this invoice? This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onDeleteClose}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={confirmDeleteInvoice} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Container>
   );
 };

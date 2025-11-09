@@ -401,7 +401,7 @@ export const LoansPage = () => {
 
   const openRepayModal = (loan: any) => {
     setSelectedLoan(loan);
-    repayForm.setValue('loan_id', loan.id);
+    repayForm.setValue('application_id', loan.application_id);
     onRepayOpen();
   };
 
@@ -1054,13 +1054,13 @@ export const LoansPage = () => {
                         <HStack justify="space-between">
                           <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Outstanding Balance</Text>
                           <Text fontWeight="bold" color="red.600" fontSize={{ base: 'sm', md: 'md' }}>
-                            {formatCurrency(selectedLoan.outstanding_balance, selectedLoan.currency?.code || 'NGN')}
+                            {formatCurrency(selectedLoan.total_repayable || selectedLoan.approved_amount || selectedLoan.requested_amount, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
                         <HStack justify="space-between">
                           <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>Next Payment Due</Text>
                           <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>
-                            {formatCurrency(selectedLoan.monthly_payment, selectedLoan.currency?.code || 'NGN')}
+                            {formatCurrency(selectedLoan.monthly_repayment, selectedLoan.currency?.code || 'NGN')}
                           </Text>
                         </HStack>
                       </VStack>
@@ -1129,6 +1129,91 @@ export const LoansPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Loan Details Modal */}
+      <Modal isOpen={isDetailsOpen} onClose={onDetailsClose} size={{ base: 'full', md: '2xl' }}>
+        <ModalOverlay />
+        <ModalContent mx={{ base: 0, md: 4 }}>
+          <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Loan Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedLoan && (
+              <VStack align="stretch" spacing={4}>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Loan Product</Text>
+                  <Text fontWeight="600">{selectedLoan.product_name || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Requested Amount</Text>
+                  <Text fontWeight="600" fontSize="lg">
+                    {selectedLoan.currency?.symbol || ''}
+                    {Number(selectedLoan.requested_amount || 0).toLocaleString()}
+                  </Text>
+                </Box>
+                {selectedLoan.approved_amount && (
+                  <Box>
+                    <Text fontSize="sm" color="gray.600" mb={1}>Approved Amount</Text>
+                    <Text fontWeight="600" fontSize="lg" color="green.600">
+                      {selectedLoan.currency?.symbol || ''}
+                      {Number(selectedLoan.approved_amount).toLocaleString()}
+                    </Text>
+                  </Box>
+                )}
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Interest Rate</Text>
+                  <Text fontWeight="600">{selectedLoan.interest_rate}%</Text>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Duration</Text>
+                  <Text fontWeight="600">{selectedLoan.tenure_months} months</Text>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Total Repayable</Text>
+                  <Text fontWeight="600" fontSize="lg" color="brand.600">
+                    {selectedLoan.currency?.symbol || ''}
+                    {Number(selectedLoan.total_repayable || 0).toLocaleString()}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Monthly Payment</Text>
+                  <Text fontWeight="600">
+                    {selectedLoan.currency?.symbol || ''}
+                    {Number(selectedLoan.monthly_repayment || 0).toLocaleString()}
+                  </Text>
+                </Box>
+                {selectedLoan.outstanding_balance !== undefined && (
+                  <Box>
+                    <Text fontSize="sm" color="gray.600" mb={1}>Outstanding Balance</Text>
+                    <Text fontWeight="600">
+                      {selectedLoan.currency?.symbol || ''}
+                      {Number(selectedLoan.outstanding_balance || 0).toLocaleString()}
+                    </Text>
+                  </Box>
+                )}
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Status</Text>
+                  <Badge colorScheme={selectedLoan.status === 'active' ? 'green' : selectedLoan.status === 'completed' ? 'blue' : 'yellow'}>
+                    {selectedLoan.status}
+                  </Badge>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" color="gray.600" mb={1}>Application Date</Text>
+                  <Text>{new Date(selectedLoan.created_at).toLocaleDateString()}</Text>
+                </Box>
+                {selectedLoan.disbursed_at && (
+                  <Box>
+                    <Text fontSize="sm" color="gray.600" mb={1}>Disbursement Date</Text>
+                    <Text>{new Date(selectedLoan.disbursed_at).toLocaleDateString()}</Text>
+                  </Box>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={onDetailsClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Container>
   );
 };
@@ -1159,11 +1244,11 @@ const RepaymentSchedule = ({ loanId }: { loanId: string }) => {
         </Thead>
         <Tbody>
           {schedule.map((item: any, index: number) => (
-            <Tr key={item.id}>
-              <Td fontSize={{ base: 'xs', md: 'sm' }}>{index + 1}</Td>
+            <Tr key={item.schedule_id}>
+              <Td fontSize={{ base: 'xs', md: 'sm' }}>{item.installment_number}</Td>
               <Td fontSize={{ base: 'xs', md: 'sm' }}>{formatDate(item.due_date)}</Td>
               <Td isNumeric fontWeight="600" fontSize={{ base: 'xs', md: 'sm' }}>
-                {formatCurrency(item.amount, item.currency?.code || 'NGN')}
+                {formatCurrency(item.total_amount, 'NGN')}
               </Td>
               <Td>
                 <Badge colorScheme={getStatusColor(item.status)} fontSize={{ base: '2xs', md: 'xs' }}>{item.status}</Badge>

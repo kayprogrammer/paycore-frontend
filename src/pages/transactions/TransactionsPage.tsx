@@ -78,6 +78,7 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { EmptyState } from '@/components/common/EmptyState';
 import { KYCRequired } from '@/components/common/KYCRequired';
 import { isKYCRequiredError, getErrorMessage } from '@/utils/errorHandlers';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface TransferForm {
   wallet_id: string;
@@ -111,6 +112,9 @@ interface DisputeForm {
 
 export const TransactionsPage = () => {
   const toast = useToast();
+
+  // WebSocket for real-time updates
+  const { latestNotification } = useWebSocket();
 
   // State
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -161,6 +165,26 @@ export const TransactionsPage = () => {
   const wallets = walletsData?.data || [];
   const banks = banksData?.data?.banks || [];
   const stats = statsData?.data;
+
+  // Listen for transaction-related WebSocket notifications
+  useEffect(() => {
+    if (latestNotification) {
+      // Check if this is a transaction-related notification based on notification_type or related_object_type
+      const transactionTypes = ['transfer', 'payment', 'wallet'];
+      const transactionRelatedTypes = ['Transaction', 'Deposit', 'Withdrawal', 'Transfer'];
+
+      const isTransactionRelated =
+        transactionTypes.includes(latestNotification.notification_type) ||
+        (latestNotification.related_object_type && transactionRelatedTypes.includes(latestNotification.related_object_type));
+
+      if (isTransactionRelated) {
+        // Refresh transactions list, wallets, and stats
+        refetch();
+        refetchWallets();
+        refetchStats();
+      }
+    }
+  }, [latestNotification, refetch, refetchWallets, refetchStats]);
 
   // Biometric authentication helper
   const authenticateWithBiometric = async (): Promise<{ biometric_token: string; device_id: string } | null> => {
