@@ -44,6 +44,7 @@ import { useGetProfileQuery } from '@/features/profile/services/profileApi';
 import { formatRelativeTime } from '@/utils/formatters';
 import { useState, useEffect } from 'react';
 import { useWebSocketContext } from '@/contexts/WebSocketContext';
+import { InstallPWA } from '@/components/common/InstallPWA';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -236,6 +237,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         </HStack>
 
         <HStack spacing={{ base: 2, md: 4 }}>
+          {/* Install PWA Button */}
+          <InstallPWA variant="icon" size="md" />
+
           {/* Notifications */}
           <Box position="relative">
             <IconButton
