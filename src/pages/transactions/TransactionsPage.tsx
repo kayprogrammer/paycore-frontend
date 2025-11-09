@@ -41,7 +41,6 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
-  Progress,
   Alert,
   AlertIcon,
   AlertTitle,
@@ -120,8 +119,6 @@ export const TransactionsPage = () => {
   const [filterType, setFilterType] = useState('');
   const [page, setPage] = useState(1);
   const [verifiedAccount, setVerifiedAccount] = useState<any>(null);
-  const [depositProgress, setDepositProgress] = useState(0);
-  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
   const [useBiometric, setUseBiometric] = useState(false);
 
   // Modals
@@ -355,35 +352,18 @@ export const TransactionsPage = () => {
         amount: Number(data.amount),
       }).unwrap();
 
-      // Check if this is an internal provider with pending status
-      const isPending = result.data?.status === 'pending';
+      toast({
+        title: 'Deposit initiated',
+        description: result.data?.payment_url
+          ? 'Complete the payment to fund your wallet'
+          : 'Deposit processing... You will be notified when complete.',
+        status: 'success',
+        duration: 5000,
+      });
 
-      if (isPending) {
-        // Show processing indicator with progress bar
-        setIsProcessingDeposit(true);
-        setDepositProgress(0);
-
-        toast({
-          title: 'Deposit initiated',
-          description: 'Processing your deposit... This will take about 15 seconds.',
-          status: 'info',
-          duration: 5000,
-        });
-      } else {
-        // Instant completion or external payment
-        toast({
-          title: 'Deposit initiated',
-          description: result.data?.payment_url
-            ? 'Complete the payment to fund your wallet'
-            : 'Deposit completed successfully',
-          status: 'success',
-          duration: 5000,
-        });
-
-        // Redirect to payment gateway if needed
-        if (result.data?.payment_url) {
-          window.open(result.data.payment_url, '_blank');
-        }
+      // Redirect to payment gateway if needed
+      if (result.data?.payment_url) {
+        window.open(result.data.payment_url, '_blank');
       }
 
       onDepositClose();
@@ -398,46 +378,6 @@ export const TransactionsPage = () => {
     }
   };
 
-  // Progress tracking effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let timeout: NodeJS.Timeout;
-
-    if (isProcessingDeposit) {
-      // Update progress every 150ms (15000ms / 100 steps)
-      interval = setInterval(() => {
-        setDepositProgress((prev) => {
-          if (prev >= 100) return 100;
-          return prev + 1;
-        });
-      }, 150);
-
-      // After 15 seconds, complete and refresh
-      timeout = setTimeout(async () => {
-        setIsProcessingDeposit(false);
-        setDepositProgress(0);
-
-        // Refresh all data
-        await Promise.all([
-          refetch(),
-          refetchWallets(),
-          refetchStats(),
-        ]);
-
-        toast({
-          title: 'Deposit confirmed!',
-          description: 'Your wallet has been funded successfully.',
-          status: 'success',
-          duration: 5000,
-        });
-      }, 15000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [isProcessingDeposit, refetch, refetchWallets, refetchStats, toast]);
 
   const handleVerifyAccount = async () => {
     // Use watch to get the latest form values
@@ -625,42 +565,6 @@ export const TransactionsPage = () => {
             </Button>
           </Stack>
         </Stack>
-
-        {/* Deposit Processing Alert */}
-        {isProcessingDeposit && (
-          <Alert
-            status="info"
-            variant="subtle"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            textAlign="center"
-            borderRadius="md"
-            p={6}
-          >
-            <AlertIcon boxSize="40px" mr={0} />
-            <AlertTitle mt={4} mb={1} fontSize="lg">
-              Processing Deposit
-            </AlertTitle>
-            <AlertDescription maxWidth="sm" mb={4}>
-              Your deposit is being processed. This typically takes about 15 seconds.
-              The page will automatically refresh when complete.
-            </AlertDescription>
-            <Box width="full" maxW="md">
-              <Progress
-                value={depositProgress}
-                size="lg"
-                colorScheme="blue"
-                hasStripe
-                isAnimated
-                borderRadius="md"
-              />
-              <Text mt={2} fontSize="sm" color="gray.600">
-                {depositProgress}% complete
-              </Text>
-            </Box>
-          </Alert>
-        )}
 
         {/* Statistics */}
         {stats && (

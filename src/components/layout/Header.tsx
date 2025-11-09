@@ -42,7 +42,8 @@ import {
 } from '@/features/notifications/services/notificationsApi';
 import { useGetProfileQuery } from '@/features/profile/services/profileApi';
 import { formatRelativeTime } from '@/utils/formatters';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useWebSocketContext } from '@/contexts/WebSocketContext';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -61,10 +62,24 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const profile = profileData?.data;
 
   // Fetch notifications - limited for header badge, unlimited for modal
-  const { data: notificationsData } = useListNotificationsQuery({ limit: 5 });
+  const { data: notificationsData, refetch: refetchNotifications } = useListNotificationsQuery({ limit: 5 });
   const { data: allNotificationsData, refetch: refetchAllNotifications, isLoading: loadingAllNotifications } = useListNotificationsQuery(
     { limit: 100 }
   );
+
+  // WebSocket integration for real-time notifications
+  const { latestNotification, unreadCount: wsUnreadCount, markAsRead: wsMarkAsRead } = useWebSocketContext();
+
+  // Refetch notifications when WebSocket receives a new notification
+  useEffect(() => {
+    if (latestNotification) {
+      console.log('New WebSocket notification received, refetching notifications...');
+      refetchNotifications();
+      refetchAllNotifications();
+
+      // Toast is already shown by WebSocketContext, no need to duplicate here
+    }
+  }, [latestNotification]);
 
   // Mutations
   const [markAsRead] = useMarkAsReadMutation();
@@ -90,7 +105,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const handleMarkAsRead = async (notificationIds: string[]) => {
     try {
       await markAsRead({ notification_ids: notificationIds }).unwrap();
+
+      // Send WebSocket update for real-time sync
+      wsMarkAsRead(notificationIds);
+
       refetchAllNotifications();
+      refetchNotifications();
       toast({
         title: 'Marked as read',
         status: 'success',

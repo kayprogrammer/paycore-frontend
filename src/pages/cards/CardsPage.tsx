@@ -140,12 +140,7 @@ export const CardsPage = () => {
   const handleCreate = async (data: CreateCardForm) => {
     try {
       await createCard(data).unwrap();
-      toast({
-        title: 'Card created successfully',
-        description: 'Your virtual card is ready to use',
-        status: 'success',
-        duration: 3000,
-      });
+      // Success notification will be sent via WebSocket
       onCreateClose();
       createForm.reset();
     } catch (error: any) {

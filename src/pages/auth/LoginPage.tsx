@@ -11,6 +11,7 @@ import { useAppDispatch } from '@/hooks';
 import { useServerAvailability } from '@/hooks/useServerAvailability';
 import { setCredentials } from '@/store/slices/authSlice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { fcmService } from '@/services/fcm.service';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,8 +29,13 @@ export const LoginPage = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
+      // Get FCM device token for push notifications
+      const deviceToken = await fcmService.getDeviceToken();
+
       const result = await googleOAuth({
         id_token: credentialResponse.credential,
+        device_token: deviceToken || undefined,
+        device_type: 'web',
       }).unwrap();
 
       console.log('Google OAuth Response:', result);

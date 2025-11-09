@@ -131,6 +131,7 @@ export const LoansPage = () => {
   const { isOpen: isRepayOpen, onOpen: onRepayOpen, onClose: onRepayClose } = useDisclosure();
   const { isOpen: isScheduleOpen, onOpen: onScheduleOpen, onClose: onScheduleClose } = useDisclosure();
   const { isOpen: isAutoRepayOpen, onOpen: onAutoRepayOpen, onClose: onAutoRepayClose } = useDisclosure();
+  const { isOpen: isDetailsOpen, onOpen: onDetailsOpen, onClose: onDetailsClose } = useDisclosure();
 
   // Forms
   const applyForm = useForm<LoanApplicationForm>();
@@ -186,17 +187,8 @@ export const LoansPage = () => {
         setProcessingProgress(100);
         setProcessingStatus('Loan active! Funds disbursed.');
 
-        // Show completion notification only once
-        if (!notificationShown.current) {
-          notificationShown.current = true;
-          toast({
-            title: 'Loan Activated!',
-            description: `Your loan has been approved and funds have been disbursed to your wallet.`,
-            status: 'success',
-            duration: 8000,
-            isClosable: true,
-          });
-        }
+        // WebSocket notifications already handle loan approval/disbursement toasts
+        // No need for duplicate frontend toast
 
         // Clear processing state after a delay
         setTimeout(() => {
@@ -416,6 +408,11 @@ export const LoansPage = () => {
   const openScheduleModal = (loan: any) => {
     setSelectedLoan(loan);
     onScheduleOpen();
+  };
+
+  const openDetailsModal = (loan: any) => {
+    setSelectedLoan(loan);
+    onDetailsOpen();
   };
 
   const error = productsError || loansError;
@@ -741,7 +738,7 @@ export const LoansPage = () => {
                                 </Button>
                               </>
                             )}
-                            <Button size={{ base: 'xs', md: 'sm' }} variant="ghost">
+                            <Button size={{ base: 'xs', md: 'sm' }} variant="ghost" onClick={() => openDetailsModal(loan)}>
                               View Details
                             </Button>
                           </Stack>
@@ -1125,7 +1122,7 @@ export const LoansPage = () => {
           <ModalHeader fontSize={{ base: 'md', md: 'lg' }}>Repayment Schedule</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <RepaymentSchedule loanId={selectedLoan?.id} />
+            <RepaymentSchedule loanId={selectedLoan?.application_id} />
           </ModalBody>
           <ModalFooter>
             <Button onClick={onScheduleClose} size={{ base: 'sm', md: 'md' }} w={{ base: 'full', sm: 'auto' }}>Close</Button>

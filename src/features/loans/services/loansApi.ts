@@ -90,7 +90,7 @@ export const loansApi = baseApi.injectEndpoints({
     // 9. Make Repayment
     makeRepayment: builder.mutation<ApiResponse<LoanRepayment>, MakeRepaymentRequest>({
       query: (data) => ({
-        url: '/loans/repayments/pay',
+        url: `/loans/applications/${data.application_id}/repayments`,
         method: 'POST',
         body: data,
       }),

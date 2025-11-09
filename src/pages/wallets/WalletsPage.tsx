@@ -54,6 +54,7 @@ import {
   FiEye,
   FiEyeOff,
   FiRefreshCw,
+  FiDollarSign,
 } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
 import { useState } from 'react';
@@ -70,6 +71,8 @@ import {
   useDisableWalletSecurityMutation,
   useChangeWalletStatusMutation,
 } from '@/features/wallets/services/walletsApi';
+import { useInitiateDepositMutation } from '@/features/transactions/services/transactionsApi';
+import { NumberInput, NumberInputField } from '@chakra-ui/react';
 import { formatCurrency, formatRelativeTime, getStatusColor } from '@/utils/formatters';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
@@ -117,11 +120,13 @@ export const WalletsPage = () => {
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isPinOpen, onOpen: onPinOpen, onClose: onPinClose } = useDisclosure();
   const { isOpen: isSecurityOpen, onOpen: onSecurityOpen, onClose: onSecurityClose } = useDisclosure();
+  const { isOpen: isFundOpen, onOpen: onFundOpen, onClose: onFundClose } = useDisclosure();
 
   // Forms
   const createForm = useForm<CreateWalletForm>();
   const editForm = useForm<CreateWalletForm>();
   const pinForm = useForm<PinForm>();
+  const fundForm = useForm<{amount: number; payment_method: string}>();
 
   // API
   const { data: walletsData, isLoading, error, refetch } = useListWalletsQuery();
@@ -134,6 +139,7 @@ export const WalletsPage = () => {
   const [enableWalletSecurity] = useEnableWalletSecurityMutation();
   const [disableWalletSecurity] = useDisableWalletSecurityMutation();
   const [changeStatus] = useChangeWalletStatusMutation();
+  const [initiateDeposit, { isLoading: depositing }] = useInitiateDepositMutation();
 
   const wallets = walletsData?.data || [];
   const currencies = currenciesData?.data || [];
@@ -353,6 +359,53 @@ export const WalletsPage = () => {
     onSecurityOpen();
   };
 
+  const openFundModal = (wallet: any) => {
+    setSelectedWallet(wallet);
+    fundForm.reset();
+    onFundOpen();
+  };
+
+  const handleFundWallet = async (data: {amount: number; payment_method: string}) => {
+    if (!selectedWallet) return;
+
+    try {
+      const response = await initiateDeposit({
+        wallet_id: selectedWallet.wallet_id,
+        amount: data.amount,
+        payment_method: data.payment_method,
+      }).unwrap();
+
+      toast({
+        title: 'Deposit initiated successfully',
+        description: response.data?.payment_url
+          ? 'Redirecting to payment gateway...'
+          : 'Processing your deposit...',
+        status: 'success',
+        duration: 3000,
+      });
+
+      // If there's a payment URL, open it in a new tab
+      if (response.data?.payment_url) {
+        window.open(response.data.payment_url, '_blank');
+      }
+
+      onFundClose();
+      fundForm.reset();
+
+      // Refresh wallets after a short delay
+      setTimeout(() => {
+        refetch();
+      }, 3000);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to initiate deposit',
+        description: getErrorMessage(error),
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Container maxW="container.xl" py={8}>
@@ -454,6 +507,9 @@ export const WalletsPage = () => {
                       size="sm"
                     />
                     <MenuList>
+                      <MenuItem icon={<Icon as={FiDollarSign} />} onClick={() => openFundModal(wallet)}>
+                        Fund Wallet
+                      </MenuItem>
                       <MenuItem icon={<Icon as={FiEdit} />} onClick={() => openEditModal(wallet)}>
                         Edit
                       </MenuItem>
@@ -613,6 +669,56 @@ export const WalletsPage = () => {
               </Button>
               <Button colorScheme="brand" type="submit" isLoading={updating}>
                 Save Changes
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Fund Wallet Modal */}
+      <Modal isOpen={isFundOpen} onClose={onFundClose} size={{ base: "full", sm: "md", md: "lg" }}>
+        <ModalOverlay />
+        <ModalContent>
+          <form onSubmit={fundForm.handleSubmit(handleFundWallet)}>
+            <ModalHeader>Fund Wallet</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <FormControl>
+                  <FormLabel>Wallet</FormLabel>
+                  <Input
+                    value={selectedWallet ? `${selectedWallet.name} (${selectedWallet.currency?.code || 'NGN'})` : ''}
+                    isReadOnly
+                    bg="gray.50"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Amount</FormLabel>
+                  <NumberInput min={0}>
+                    <NumberInputField
+                      {...fundForm.register('amount', { valueAsNumber: true })}
+                      placeholder="0.00"
+                    />
+                  </NumberInput>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select {...fundForm.register('payment_method')} placeholder="Select payment method">
+                    <option value="card">Card Payment</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="ussd">USSD</option>
+                  </Select>
+                </FormControl>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onFundClose} size={{ base: "sm", md: "md" }}>
+                Cancel
+              </Button>
+              <Button colorScheme="brand" type="submit" isLoading={depositing} size={{ base: "sm", md: "md" }}>
+                Continue
               </Button>
             </ModalFooter>
           </form>

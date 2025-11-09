@@ -18,6 +18,7 @@ import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { useVerifyOTPMutation } from '@/features/auth/services/authApi';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/store/slices/authSlice';
+import { fcmService } from '@/services/fcm.service';
 
 export const VerifyOTPPage = () => {
   const [otp, setOtp] = useState('');
@@ -68,10 +69,14 @@ export const VerifyOTPPage = () => {
     }
 
     try {
+      // Get FCM device token for push notifications
+      const deviceToken = await fcmService.getDeviceToken();
+
       const response = await verifyOTP({
         email: email,
         otp: parseInt(otpToVerify),
         device_type: 'web',
+        device_token: deviceToken || undefined,
       }).unwrap();
 
       // Store tokens and user data in Redux

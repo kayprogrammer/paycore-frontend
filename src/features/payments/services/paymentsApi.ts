@@ -143,17 +143,7 @@ export const paymentsApi = baseApi.injectEndpoints({
       invalidatesTags: ['Payments'],
     }),
 
-    // 12. Pay Invoice (Public endpoint - by invoice number)
-    payInvoice: builder.mutation<ApiResponse<Payment>, { invoice_number: string; data: any }>({
-      query: ({ invoice_number, data }) => ({
-        url: `/payments/invoice/${invoice_number}/pay`,
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Payments', 'Wallets'],
-    }),
-
-    // 13. List Payments
+    // 12. List Payments
     listPayments: builder.query<ApiResponse<PaginatedResponse<Payment>>, QueryParams | void>({
       query: (params) => ({
         url: '/payments/payments/list',

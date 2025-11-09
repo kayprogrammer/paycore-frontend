@@ -39,7 +39,7 @@ export const notificationsApi = baseApi.injectEndpoints({
     // 4. Delete Notifications
     deleteNotifications: builder.mutation<ApiResponse<{ message: string }>, string[]>({
       query: (notification_ids) => ({
-        url: '/notifications/delete',
+        url: '/notifications',
         method: 'DELETE',
         body: { notification_ids },
       }),

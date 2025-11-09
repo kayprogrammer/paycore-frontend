@@ -117,7 +117,7 @@ export const BillsPage = () => {
   const providers = providersData?.data || [];
   const packages = packagesData?.data || [];
   const wallets = walletsData?.data || [];
-  const payments = paymentsData?.data?.data || [];
+  const payments = paymentsData?.data?.payments || [];
 
   // Handlers
   const handleCategorySelect = (categoryId: string) => {
@@ -561,13 +561,13 @@ export const BillsPage = () => {
                   </Thead>
                   <Tbody>
                     {payments.map((payment: any) => (
-                      <Tr key={payment.id}>
-                        <Td fontSize={{ base: "xs", md: "sm" }}>{payment.provider_name}</Td>
+                      <Tr key={payment.payment_id}>
+                        <Td fontSize={{ base: "xs", md: "sm" }}>{payment.provider?.name || 'N/A'}</Td>
                         <Td fontFamily="mono" fontSize={{ base: "xs", md: "sm" }}>
-                          {payment.customer_identifier}
+                          {payment.customer_id}
                         </Td>
                         <Td fontWeight="600" fontSize={{ base: "xs", md: "sm" }}>
-                          {formatCurrency(payment.amount, payment.currency)}
+                          {formatCurrency(payment.amount, payment.currency || 'NGN')}
                         </Td>
                         <Td>
                           <Badge colorScheme={getStatusColor(payment.status)} fontSize={{ base: "2xs", md: "xs" }}>

@@ -93,6 +93,8 @@ export interface BiometricLoginRequest {
 export interface GoogleOAuthRequest {
   token: string;
   id_token?: string;
+  device_token?: string;
+  device_type?: 'web' | 'ios' | 'android';
 }
 
 export interface GoogleOAuthResponse {

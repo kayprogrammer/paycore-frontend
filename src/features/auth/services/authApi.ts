@@ -132,6 +132,8 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
         body: {
           token: data.id_token || data.token, // Backend expects 'token' field
+          device_token: data.device_token,
+          device_type: data.device_type,
         },
       }),
       invalidatesTags: ['Auth'],
