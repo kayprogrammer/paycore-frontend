@@ -58,7 +58,6 @@ import {
 import {
   useSubmitKYCMutation,
 } from '@/features/compliance/services/complianceApi';
-import { useChangePasswordMutation } from '@/features/auth/services/authApi';
 import { formatDate } from '@/utils/formatters';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
@@ -100,29 +99,20 @@ interface KYCForm {
   proof_of_address: File | null;
 }
 
-interface PasswordForm {
-  old_password: string;
-  new_password: string;
-  confirm_password: string;
-}
-
 export const ProfilePage = () => {
   const toast = useToast();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const { isOpen: isPasswordOpen, onOpen: onPasswordOpen, onClose: onPasswordClose } = useDisclosure();
   const { isOpen: isKYCOpen, onOpen: onKYCOpen, onClose: onKYCClose } = useDisclosure();
 
   const profileForm = useForm<ProfileForm>();
-  const passwordForm = useForm<PasswordForm>();
   const kycForm = useForm<any>();
 
   const { data: profileData, isLoading, error, refetch: refetchProfile } = useGetProfileQuery();
   const { data: countriesData } = useGetCountriesQuery();
   const [updateProfile, { isLoading: updating }] = useUpdateProfileMutation();
   const [uploadAvatar, { isLoading: uploading }] = useUploadAvatarMutation();
-  const [changePassword, { isLoading: changingPassword }] = useChangePasswordMutation();
   const [submitKYC, { isLoading: submittingKYC }] = useSubmitKYCMutation();
 
   // KYC countdown state
@@ -194,25 +184,6 @@ export const ProfilePage = () => {
       toast({ title: 'Avatar updated successfully', status: 'success' });
     } catch (error: any) {
       toast({ title: 'Upload failed', description: error.data?.message, status: 'error' });
-    }
-  };
-
-  const handlePasswordChange = async (data: PasswordForm) => {
-    if (data.new_password !== data.confirm_password) {
-      toast({ title: 'Passwords do not match', status: 'error' });
-      return;
-    }
-
-    try {
-      await changePassword({
-        old_password: data.old_password,
-        new_password: data.new_password,
-      }).unwrap();
-      toast({ title: 'Password changed successfully', status: 'success' });
-      onPasswordClose();
-      passwordForm.reset();
-    } catch (error: any) {
-      toast({ title: 'Password change failed', description: error.data?.message, status: 'error' });
     }
   };
 
@@ -377,9 +348,6 @@ export const ProfilePage = () => {
                   <Button size="sm" leftIcon={<Icon as={FiEdit} />} onClick={openEditModal}>
                     Edit Profile
                   </Button>
-                  <Button size="sm" variant="outline" onClick={onPasswordOpen}>
-                    Change Password
-                  </Button>
                 </HStack>
               </VStack>
             </HStack>
@@ -538,41 +506,6 @@ export const ProfilePage = () => {
               </Button>
               <Button colorScheme="brand" type="submit" isLoading={updating}>
                 Save Changes
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* Change Password Modal */}
-      <Modal isOpen={isPasswordOpen} onClose={onPasswordClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)}>
-            <ModalHeader>Change Password</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Current Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('old_password')} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>New Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('new_password')} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Confirm New Password</FormLabel>
-                  <Input type="password" {...passwordForm.register('confirm_password')} />
-                </FormControl>
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onPasswordClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="brand" type="submit" isLoading={changingPassword}>
-                Change Password
               </Button>
             </ModalFooter>
           </form>
